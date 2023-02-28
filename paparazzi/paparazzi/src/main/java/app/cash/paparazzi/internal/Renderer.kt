@@ -23,6 +23,9 @@ import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated
 import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated.ResourceItem
 import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated.ResourceRepository
 import app.cash.paparazzi.deprecated.com.android.io.FolderWrapper
+import app.cash.paparazzi.res.AndroidFacet
+import app.cash.paparazzi.res.ProjectResourceRepository
+import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.layoutlib.bridge.Bridge
 import com.android.layoutlib.bridge.android.RenderParamsFlags
 import com.android.layoutlib.bridge.impl.DelegateManager
@@ -47,12 +50,11 @@ internal class Renderer(
       loadPublicResources(logger)
     }
 
-    val projectResources = object : ResourceRepository(FolderWrapper(environment.resDir), false) {
-      override fun createResourceItem(name: String): ResourceItem {
-        return ResourceItem(name)
-      }
-    }
-    projectResources.loadResources()
+    val projectResources = ProjectResourceRepository.create(
+      facet = AndroidFacet(),
+      resourceDirectories = environment.localeResDirs,
+      namespace = ResourceNamespace.TODO()
+    )
 
     sessionParamsBuilder = SessionParamsBuilder(
       layoutlibCallback = layoutlibCallback,

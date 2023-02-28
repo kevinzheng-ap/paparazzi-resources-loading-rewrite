@@ -203,12 +203,11 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
 
   private class ResourcePriorityComparator constructor(repositories: Collection<SingleNamespaceResourceRepository>) :
     Comparator<ResourceItem?> {
-    private val repositoryOrdering: Object2IntMap<SingleNamespaceResourceRepository>
+    private val repositoryOrdering: HashMap<SingleNamespaceResourceRepository, Int> = hashMapOf()
 
     init {
-      repositoryOrdering = Object2IntOpenHashMap(repositories.size)
       for ((i, repository) in repositories.withIndex()) {
-        repositoryOrdering.put(repository, i)
+        repositoryOrdering[repository] = i
       }
     }
 
@@ -217,7 +216,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
     }
 
     private fun getOrdering(item: ResourceItem): Int {
-      val ordering: Int = repositoryOrdering.getInt(item.getRepository())
+      val ordering: Int = repositoryOrdering.getValue(item.repository)
       assert(ordering >= 0)
       return ordering
     }
@@ -434,7 +433,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
         var index = findConfigIndex(item, start, myResourceItems.size)
         if (index < 0) {
           index = index.inv()
-          myResourceItems.add(index, SmartList(item))
+          myResourceItems.add(index, mutableListOf(item))
         } else {
           val nested: MutableList<ResourceItem> = myResourceItems[index]
           // Iterate backwards since it is likely to require fewer iterations.

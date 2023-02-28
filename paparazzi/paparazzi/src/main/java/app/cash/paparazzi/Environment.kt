@@ -15,6 +15,7 @@
  */
 package app.cash.paparazzi
 
+import android.util.Log
 import java.io.File
 import java.io.FileNotFoundException
 import java.nio.file.Path
@@ -29,7 +30,8 @@ data class Environment(
   val assetsDir: String,
   val packageName: String,
   val compileSdkVersion: Int,
-  val resourcePackageNames: List<String>
+  val resourcePackageNames: List<String>,
+  val localeResDirs: List<String>
 ) {
   init {
     val platformDirPath = Path.of(platformDir)
@@ -62,7 +64,8 @@ fun detectEnvironment(): Environment {
     assetsDir = appTestDir.resolve(configLines[4]).toString(),
     packageName = configLines[0],
     compileSdkVersion = configLines[2].toInt(),
-    resourcePackageNames = configLines[5].split(",")
+    resourcePackageNames = configLines[5].split(","),
+    localeResDirs = configLines[6].split(",")
   )
 }
 

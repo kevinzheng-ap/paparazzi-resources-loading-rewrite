@@ -76,6 +76,12 @@ class PaparazziPlugin : Plugin<Project> {
       val variantSlug = variant.name.capitalize(Locale.US)
       val testVariant = variant.unitTestVariant ?: return@all
 
+      // local resources
+      val resDirs = project
+        .files(variant.sourceSets.flatMap { it.resDirectories })
+        .asFileTree
+        .files
+
       val mergeResourcesOutputDir = variant.mergeResourcesProvider.flatMap { it.outputDir }
       val mergeAssetsProvider =
         project.tasks.named("merge${variantSlug}Assets") as TaskProvider<MergeSourceSetFolders>
@@ -106,6 +112,7 @@ class PaparazziPlugin : Plugin<Project> {
         task.targetSdkVersion.set(android.targetSdkVersion())
         task.compileSdkVersion.set(android.compileSdkVersion())
         task.mergeAssetsOutput.set(mergeAssetsOutputDir)
+        task.localResDirs.set(resDirs.joinToString(","))
         task.paparazziResources.set(project.layout.buildDirectory.file("intermediates/paparazzi/${variant.name}/resources.txt"))
       }
 

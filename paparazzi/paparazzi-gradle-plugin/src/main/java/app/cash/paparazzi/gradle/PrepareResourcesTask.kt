@@ -45,6 +45,9 @@ abstract class PrepareResourcesTask : DefaultTask() {
   @get:Input
   abstract val compileSdkVersion: Property<String>
 
+  @get:Input
+  abstract val localResDirs: Property<String>
+
   @get:InputDirectory
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val mergeAssetsOutput: DirectoryProperty
@@ -95,6 +98,8 @@ abstract class PrepareResourcesTask : DefaultTask() {
         it.write(projectDirectory.relativize(mergeAssetsOutput.get()))
         it.newLine()
         it.write(resourcePackageNames)
+        it.newLine()
+        it.write(localResDirs.get())
         it.newLine()
       }
   }

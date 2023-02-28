@@ -27,7 +27,7 @@ import com.android.ide.common.rendering.api.SessionParams
 import com.android.ide.common.rendering.api.SessionParams.Key
 import com.android.ide.common.rendering.api.SessionParams.RenderingMode
 import com.android.ide.common.resources.ResourceResolver
-import com.android.ide.common.resources.ResourceValueMap
+import com.android.ide.common.resources.getConfiguredResources
 import com.android.layoutlib.bridge.Bridge
 import com.android.resources.LayoutDirection
 import com.android.resources.ResourceType
@@ -38,7 +38,7 @@ internal data class SessionParamsBuilder(
   private val logger: PaparazziLogger,
   private val frameworkResources: ResourceRepository,
   private val assetRepository: AssetRepository,
-  private val projectResources: ResourceRepository,
+  private val projectResources: com.android.ide.common.resources.ResourceRepository,
   private val deviceConfig: DeviceConfig = DeviceConfig.NEXUS_5,
   private val renderingMode: RenderingMode = RenderingMode.NORMAL,
   private val targetSdk: Int = 22,
@@ -63,6 +63,7 @@ internal data class SessionParamsBuilder(
       themeName.startsWith(SdkConstants.PREFIX_ANDROID) -> {
         withTheme(themeName.substring(SdkConstants.PREFIX_ANDROID.length), false)
       }
+
       else -> withTheme(themeName, true)
     }
   }
@@ -77,13 +78,13 @@ internal data class SessionParamsBuilder(
 
     val folderConfiguration = deviceConfig.folderConfiguration
     val resourceResolver = ResourceResolver.create(
-      mapOf<ResourceNamespace, Map<ResourceType, ResourceValueMap>>(
+      mapOf(
         ResourceNamespace.ANDROID to frameworkResources.getConfiguredResources(
           folderConfiguration
         ),
         ResourceNamespace.TODO() to projectResources.getConfiguredResources(
           folderConfiguration
-        )
+        ).row(ResourceNamespace.TODO())
       ),
       ResourceReference(
         ResourceNamespace.fromBoolean(!isProjectTheme),
