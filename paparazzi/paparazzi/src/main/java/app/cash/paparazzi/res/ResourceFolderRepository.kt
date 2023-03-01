@@ -10,8 +10,8 @@ import com.android.ide.common.resources.ResourceItem
 import com.android.ide.common.resources.ResourceVisitor
 import com.android.ide.common.resources.SingleNamespaceResourceRepository
 import com.android.ide.common.resources.ValueResourceNameValidator
-import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.resources.ResourceType
+import com.android.resources.ResourceType.ATTR
 import com.android.utils.XmlUtils
 import com.google.common.collect.LinkedListMultimap
 import com.google.common.collect.ListMultimap
@@ -20,7 +20,6 @@ import org.w3c.dom.Document
 import org.w3c.dom.Node
 import java.io.File
 import java.util.EnumMap
-
 
 /**
  * The [ResourceFolderRepository] is leaf in the repository tree, and is used for user editable resources (e.g. the resources in the
@@ -44,28 +43,28 @@ import java.util.EnumMap
  *  * Register the PSI project listener as a project service instead.
  *
 </string> */
-class ResourceFolderRepository private constructor(
-  val facet: AndroidFacet,
-  private val resourceDir: String,
+class ResourceFolderRepository constructor(
+  resourceDir: String,
   namespace: ResourceNamespace,
-) : LocalResourceRepository(resourceDir) {
+) : LocalResourceRepository(resourceDir), SingleNamespaceResourceRepository {
 
   private val myNamespace: ResourceNamespace
 
-  private val myResourceTable: Map<ResourceType, ListMultimap<String, ResourceItem>> = EnumMap(
-    ResourceType::class.java
-  )
+  private val myResourceTable: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> =
+    EnumMap(
+      ResourceType::class.java
+    )
 
   init {
     myNamespace = namespace
+    scan(File(resourceDir))
   }
-
 
   /**
    * Inserts the given resources into this repository, while holding the global repository lock.
    */
   private fun commitToRepository(itemsByType: Map<ResourceType, ListMultimap<String, ResourceItem>>) {
-    if (!itemsByType.isEmpty()) {
+    if (itemsByType.isNotEmpty()) {
       synchronized(ITEM_MAP_LOCK) { commitToRepositoryWithoutLock(itemsByType) }
     }
   }
@@ -92,12 +91,12 @@ class ResourceFolderRepository private constructor(
     return ResourceVisitor.VisitResult.CONTINUE
   }
 
-  override fun getNamespaces(): MutableSet<ResourceNamespace> {
-    TODO("Not yet implemented")
+  override fun getNamespace(): ResourceNamespace {
+    return myNamespace
   }
 
-  override fun getLeafResourceRepositories(): MutableCollection<SingleNamespaceResourceRepository> {
-    TODO("Not yet implemented")
+  override fun getPackageName(): String {
+    throw UnsupportedOperationException()
   }
 
   @GuardedBy("ITEM_MAP_LOCK")
@@ -105,55 +104,61 @@ class ResourceFolderRepository private constructor(
     namespace: ResourceNamespace,
     type: ResourceType
   ): ListMultimap<String, ResourceItem>? {
-    return if (!namespace.equals(myNamespace)) {
+    return if (namespace != myNamespace) {
       null
     } else myResourceTable[type]
   }
 
   private fun getOrCreateMap(type: ResourceType): ListMultimap<String, ResourceItem> {
     // Use LinkedListMultimap to preserve ordering for editors that show original order.
-    return myResourceTable.computeIfAbsent(type) { k -> LinkedListMultimap.create() }
+    return myResourceTable.computeIfAbsent(type) { LinkedListMultimap.create() }
   }
-
-  val namespace: ResourceNamespace
-    get() = myNamespace
 
   // This reads the value.xml
   private fun scanValueFileAsPsi(
-    result: Map<ResourceType, ListMultimap<String, ResourceItem>>,
+    result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
     file: File,
   ): Boolean {
     var added = false
     // TODO
-    val reader = XmlUtils.getUtfReader(file)
-    val document: Document? = XmlUtils.parseDocument(reader, true)
-    if (document != null) {
-      val root: String = XmlUtils.getRootTagName(file) ?: return false
-      if (root != TAG_RESOURCES) {
-        return false
-      }
-      val subTags = XmlUtils.getSubTags(document) // Not recursive, right?
-      for (tag in subTags) {
-        val name: String = tag.getAttribute(ATTR_NAME)
-        val type: ResourceType? = getResourceTypeForResourceTag(tag)
-        if (type != null && isValidValueResourceName(name)) {
-          addToResult(item, result)
-          added = true
-          if (type === ResourceType.STYLEABLE) {
-            // For styleables we also need to create attr items for its children.
-            val attrs = XmlUtils.getSubTags(tag)
-            if (attrs.count() > 0) {
-              for (child in attrs) {
-                val attrName: String = child.getAttribute(ATTR_NAME)
-                if (isValidValueResourceName(attrName) && !attrName.startsWith(
-                    ANDROID_NS_NAME_PREFIX
-                  ) // Only add attr nodes for elements that specify a format or have flag/enum children; otherwise
-                  // it's just a reference to an existing attr.
-                  && (child.getAttribute(ATTR_FORMAT) != null || XmlUtils.getSubTags(child)
-                    .count() > 0)
-                ) {
-                  // Parse attr here
-                  addToResult(attrItem, result)
+    if (file.extension == "xml") {
+      val reader = XmlUtils.getUtfReader(file)
+      val document: Document? = XmlUtils.parseDocument(reader, true)
+      if (document != null) {
+        val root: String = XmlUtils.getRootTagName(file) ?: return false
+        if (root != TAG_RESOURCES) {
+          return false
+        }
+        val subTags = XmlUtils.getSubTags(document.firstChild) // Not recursive, right?
+        for (tag in subTags) {
+          val name: String = tag.getAttribute(ATTR_NAME)
+          val type: ResourceType? = getResourceTypeForResourceTag(tag)
+          if (type != null && isValidValueResourceName(name)) {
+            val item = PsiResourceItem(
+              file = file,
+              name = name,
+              type = type,
+              namespace = namespace
+            )
+            addToResult(item, result)
+            added = true
+            if (type === ResourceType.STYLEABLE) {
+              // For styleables we also need to create attr items for its children.
+              val attrs = XmlUtils.getSubTags(tag)
+              if (attrs.count() > 0) {
+                for (child in attrs) {
+                  val attrName: String = child.getAttribute(ATTR_NAME)
+                  if (isValidValueResourceName(attrName) && !attrName.startsWith(
+                      ANDROID_NS_NAME_PREFIX
+                    ) // Only add attr nodes for elements that specify a format or have flag/enum children; otherwise
+                    // it's just a reference to an existing attr.
+                    && (child.getAttribute(ATTR_FORMAT) != null || XmlUtils.getSubTags(child)
+                      .count() > 0)
+                  ) {
+                    // Parse attr here
+                    val attrItem = PsiResourceItem(file, name, ATTR, namespace)
+                    addToResult(attrItem, result)
+                  }
                 }
               }
             }
@@ -161,15 +166,14 @@ class ResourceFolderRepository private constructor(
         }
       }
     }
-    val item = PsiResourceItem(File(filePath))
-    addToResult(item, result)
     return added
   }
 
   private fun getResourceTypeForResourceTag(tag: Node): ResourceType? = ResourceType.fromXmlTag(tag)
 
-  private fun scan(file: File, folderConfiguration: FolderConfiguration) {
-    val result: Map<ResourceType, ListMultimap<String, ResourceItem>> = hashMapOf()
+  private fun scan(file: File) {
+    val result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> =
+      EnumMap(com.android.resources.ResourceType::class.java)
     scanValueFileAsPsi(result, file)
     commitToRepository(result)
   }
@@ -202,20 +206,19 @@ class ResourceFolderRepository private constructor(
      * NOTE: You should normally use [ResourceFolderRegistry.get] rather than this method.
      */
     fun create(
-      facet: AndroidFacet,
       dir: String,
       namespace: ResourceNamespace
     ): ResourceFolderRepository {
-      return ResourceFolderRepository(facet, dir, namespace)
+      return ResourceFolderRepository(dir, namespace)
     }
 
     private fun addToResult(
       item: ResourceItem,
-      result: Map<ResourceType, ListMultimap<String, ResourceItem>>
+      result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>
     ) {
       // The insertion order matters, see AppResourceRepositoryTest.testStringOrder.
-      result.computeIfAbsent(item.getType()) { t -> LinkedListMultimap.create() }
-        .put(item.getName(), item)
+      result.computeIfAbsent(item.type) { LinkedListMultimap.create() }
+        .put(item.name, item)
     }
 
     @Contract(value = "null -> false")

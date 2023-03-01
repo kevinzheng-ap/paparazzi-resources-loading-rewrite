@@ -9,16 +9,13 @@ import com.google.common.base.MoreObjects
  * @see StudioResourceRepositoryManager.getModuleResources
  */
 internal class ModuleResourceRepository private constructor(
-  facet: AndroidFacet,
   namespace: ResourceNamespace,
   delegates: List<LocalResourceRepository>,
-) : MultiResourceRepository(facet.getModule()), SingleNamespaceResourceRepository {
-  private val myFacet: AndroidFacet
+) : MultiResourceRepository(""), SingleNamespaceResourceRepository {
 
   private val myNamespace: ResourceNamespace
 
   init {
-    myFacet = facet
     myNamespace = namespace
     setChildren(delegates, emptyList(), emptyList())
   }
@@ -56,7 +53,6 @@ internal class ModuleResourceRepository private constructor(
      * @return the resource repository
      */
     fun forMainResources(
-      facet: AndroidFacet,
       namespace: ResourceNamespace,
       resourceDirectories: List<String>,
     ): LocalResourceRepository {
@@ -68,10 +64,9 @@ internal class ModuleResourceRepository private constructor(
       addRepositoriesInReverseOverlayOrder(
         resourceDirectories,
         childRepositories,
-        facet
+        namespace,
       )
       return ModuleResourceRepository(
-        facet,
         namespace,
         childRepositories,
       )
@@ -94,11 +89,11 @@ internal class ModuleResourceRepository private constructor(
     private fun addRepositoriesInReverseOverlayOrder(
       resourceDirectories: List<String>,
       childRepositories: MutableList<LocalResourceRepository>,
-      facet: AndroidFacet
+      namespace: ResourceNamespace,
     ) {
       var i = resourceDirectories.size
       while (--i >= 0) {
-        val repository = ResourceFolderRepository()
+        val repository = ResourceFolderRepository(resourceDirectories[i], namespace)
         childRepositories.add(repository)
       }
     }

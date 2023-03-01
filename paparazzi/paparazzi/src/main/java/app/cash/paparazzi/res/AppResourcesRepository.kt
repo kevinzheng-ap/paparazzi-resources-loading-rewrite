@@ -2,14 +2,11 @@
 package app.cash.paparazzi.res
 
 internal class AppResourceRepository private constructor(
-  facet: AndroidFacet,
   localResources: List<LocalResourceRepository>,
   libraryResources: Collection<LocalResourceRepository>
-) : MultiResourceRepository(facet.getModule() + " with modules and libraries") {
-  private val myFacet: AndroidFacet
+) : MultiResourceRepository(" with modules and libraries") {
 
   init {
-    myFacet = facet
     setChildren(
       localResources,
       libraryResources,
