@@ -20,10 +20,7 @@ import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Environment
 import app.cash.paparazzi.Flags
 import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated.FrameworkResources
-import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated.ResourceItem
-import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated.ResourceRepository
 import app.cash.paparazzi.deprecated.com.android.io.FolderWrapper
-import app.cash.paparazzi.res.AndroidFacet
 import app.cash.paparazzi.res.ProjectResourceRepository
 import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.layoutlib.bridge.Bridge
@@ -51,7 +48,6 @@ internal class Renderer(
     }
 
     val projectResources = ProjectResourceRepository.create(
-      facet = AndroidFacet(),
       resourceDirectories = environment.localeResDirs,
       namespace = ResourceNamespace.TODO()
     )

@@ -8,34 +8,29 @@ import java.util.Collections
  * @see StudioResourceRepositoryManager.getProjectResources
  */
 internal class ProjectResourceRepository private constructor(
-  facet: AndroidFacet,
   localResources: List<LocalResourceRepository>
 ) :
-  MultiResourceRepository(facet.getModule() + " with modules") {
-  private val myFacet: AndroidFacet
+  MultiResourceRepository("with modules") {
 
   init {
-    myFacet = facet
     setChildren(localResources, emptyList(), emptyList())
   }
 
   companion object {
     fun create(
-      facet: AndroidFacet,
       resourceDirectories: List<String>,
       namespace: ResourceNamespace,
     ): ProjectResourceRepository {
-      val resources = computeRepositories(facet, resourceDirectories, namespace)
-      return ProjectResourceRepository(AndroidFacet(), resources)
+      val resources = computeRepositories(resourceDirectories, namespace)
+      return ProjectResourceRepository(resources)
     }
 
     private fun computeRepositories(
-      facet: AndroidFacet,
       resourceDirectories: List<String>,
       namespace: ResourceNamespace,
     ): List<LocalResourceRepository> {
       val resources: LocalResourceRepository =
-        ModuleResourceRepository.forMainResources(facet, namespace, resourceDirectories)
+        ModuleResourceRepository.forMainResources(namespace, resourceDirectories)
 
       // val main: LocalResourceRepository = StudioResourceRepositoryManager.getModuleResources(facet)
       //

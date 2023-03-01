@@ -139,7 +139,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
         if (visitor.shouldVisitNamespace(namespace)) {
           ResourceType.values().forEach { type ->
             if (visitor.shouldVisitResourceType(type)) {
-              getMap(namespace, type).values()?.forEach { item ->
+              getMap(namespace, type)?.values()?.forEach { item ->
                 if (visitor.visit(item) == ABORT) {
                   return ABORT
                 }
@@ -156,7 +156,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
   override fun getMap(
     namespace: ResourceNamespace,
     resourceType: ResourceType
-  ): ListMultimap<String, ResourceItem> {
+  ): ListMultimap<String, ResourceItem>? {
     val repositoriesForNamespace: ImmutableList<SingleNamespaceResourceRepository> =
       myLeafsByNamespace.get(namespace)
     if (repositoriesForNamespace.size == 1) {
@@ -186,7 +186,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       }
     }
 
-    return map!!
+    return map
   }
 
   override fun dispose() {
