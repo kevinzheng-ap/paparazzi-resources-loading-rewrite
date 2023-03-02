@@ -138,7 +138,8 @@ class ResourceFolderRepository constructor(
               file = file,
               name = name,
               type = type,
-              namespace = namespace
+              namespace = namespace,
+              tag = tag
             )
             addToResult(item, result)
             added = true
@@ -156,7 +157,12 @@ class ResourceFolderRepository constructor(
                       .count() > 0)
                   ) {
                     // Parse attr here
-                    val attrItem = PsiResourceItem(file, name, ATTR, namespace)
+                    val attrItem = PsiResourceItem(
+                      file = file,
+                      name = name,
+                      type = ATTR,
+                      namespace = namespace,
+                      tag = child)
                     addToResult(attrItem, result)
                   }
                 }
