@@ -1,6 +1,5 @@
 package app.cash.paparazzi.res
 
-
 /*
  * Copyright (C) 2016 The Android Open Source Project
  *
@@ -32,6 +31,7 @@ import com.android.ide.common.rendering.api.AttrResourceValueImpl
 import com.android.ide.common.rendering.api.AttributeFormat
 import com.android.ide.common.rendering.api.AttributeFormat.ENUM
 import com.android.ide.common.rendering.api.AttributeFormat.FLAGS
+import com.android.ide.common.rendering.api.DensityBasedResourceValueImpl
 import com.android.ide.common.rendering.api.PluralsResourceValueImpl
 import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.rendering.api.ResourceReference
@@ -45,6 +45,7 @@ import com.android.ide.common.resources.ResourceItem
 import com.android.ide.common.resources.ValueXmlHelper
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.ide.common.util.PathString
+import com.android.resources.Density
 import com.android.resources.ResourceType
 import com.android.resources.ResourceUrl
 import com.android.utils.XmlUtils
@@ -52,13 +53,12 @@ import org.w3c.dom.Element
 import java.io.File
 import java.util.EnumSet
 
-
 class PsiResourceItem constructor(
-  file: File,
+  private val file: File,
   private val name: String,
   private val type: ResourceType,
   private val namespace: ResourceNamespace,
-  private val tag: Element
+  private val tag: Element?
 ) : ResourceItem {
   private val folderConfiguration: FolderConfiguration =
     FolderConfiguration.getConfigForFolder(file.parentFile.name)
@@ -91,20 +91,38 @@ class PsiResourceItem constructor(
     TODO("Not yet implemented")
   }
 
-  override fun getResourceValue(): ResourceValue? {
-    return parseXmlToResourceValueSafe(tag)
+  override fun getResourceValue(): ResourceValue {
+    return if (tag == null) {
+      val density = if (type == ResourceType.DRAWABLE || type == ResourceType.MIPMAP) getFolderDensity() else null
+      val path = file.absolutePath
+      if (density != null) {
+        DensityBasedResourceValueImpl (getNamespace(), type, name, path, density, null);
+      } else {
+        ResourceValueImpl (getNamespace(), type, name, path, null);
+      }
+    } else {
+      parseXmlToResourceValueSafe(tag)
+    }
   }
 
-  private fun parseXmlToResourceValueSafe(tag: Element): ResourceValue? {
+  private fun getFolderDensity(): Density? {
+    val configuration = configuration
+    val densityQualifier = configuration.densityQualifier
+    return densityQualifier?.value
+  }
+
+  private fun parseXmlToResourceValueSafe(tag: Element): ResourceValue {
     val value: ResourceValueImpl = when (type) {
       ResourceType.STYLE -> {
         val parent: String = getAttributeValue(tag, ATTR_PARENT)
         parseStyleValue(tag, StyleResourceValueImpl(getNamespace(), name, parent, null))
       }
+
       ResourceType.STYLEABLE -> parseDeclareStyleable(
         tag,
         StyleableResourceValueImpl(getNamespace(), name, null, null)
       )
+
       ResourceType.ATTR -> parseAttrValue(tag, AttrResourceValueImpl(getNamespace(), name, null))
       ResourceType.ARRAY -> parseArrayValue(
         tag,
@@ -120,6 +138,7 @@ class PsiResourceItem constructor(
             return index.toInt() ?: super.getDefaultIndex()
           }
         })
+
       ResourceType.PLURALS -> parsePluralsValue(
         tag,
         object : PluralsResourceValueImpl(getNamespace(), name, null, null) {
@@ -140,8 +159,10 @@ class PsiResourceItem constructor(
             return super.getValue()
           }
         })
+
       ResourceType.STRING ->
         parseTextValue(tag, TextResourceValueImpl(getNamespace(), name, null, null, null))
+
       else -> parseValue(tag, ResourceValueImpl(getNamespace(), type, name, null))
     }
 
@@ -283,7 +304,6 @@ class PsiResourceItem constructor(
 //    }
     return null
   }
-
 
   /**
    * Returns the text content of a given tag
