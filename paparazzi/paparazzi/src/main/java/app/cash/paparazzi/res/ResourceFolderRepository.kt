@@ -10,8 +10,11 @@ import com.android.ide.common.resources.ResourceItem
 import com.android.ide.common.resources.ResourceVisitor
 import com.android.ide.common.resources.SingleNamespaceResourceRepository
 import com.android.ide.common.resources.ValueResourceNameValidator
+import com.android.resources.FolderTypeRelationship
+import com.android.resources.ResourceFolderType
 import com.android.resources.ResourceType
 import com.android.resources.ResourceType.ATTR
+import com.android.utils.SdkUtils
 import com.android.utils.XmlUtils
 import com.google.common.collect.LinkedListMultimap
 import com.google.common.collect.ListMultimap
@@ -162,7 +165,8 @@ class ResourceFolderRepository constructor(
                       name = name,
                       type = ATTR,
                       namespace = namespace,
-                      tag = child)
+                      tag = child
+                    )
                     addToResult(attrItem, result)
                   }
                 }
@@ -177,11 +181,31 @@ class ResourceFolderRepository constructor(
 
   private fun getResourceTypeForResourceTag(tag: Node): ResourceType? = ResourceType.fromXmlTag(tag)
 
+  fun getFolderType(file: File): ResourceFolderType {
+    return ResourceFolderType.getFolderType(file.parentFile.name)
+  }
+
   private fun scan(file: File) {
+    val folderType = getFolderType(file)
     val result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> =
       EnumMap(com.android.resources.ResourceType::class.java)
-    scanValueFileAsPsi(result, file)
+    if (folderType == ResourceFolderType.VALUES) {
+      scanValueFileAsPsi(result, file)
+    } else {
+      scanFileResourceFileAsPsi(folderType, result, file)
+    }
     commitToRepository(result)
+  }
+
+  private fun scanFileResourceFileAsPsi(
+    folderType: ResourceFolderType,
+    result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+    file: File
+  ) {
+    val type = FolderTypeRelationship.getNonIdRelatedResourceType(folderType)
+    val resourceName: String = SdkUtils.fileNameToResourceName(file.name)
+    val item = PsiResourceItem(file, resourceName, type, myNamespace, null)
+    addToResult(item, result)
   }
 
   companion object {
