@@ -1,7 +1,6 @@
 // Copyright Square, Inc.
 package app.cash.paparazzi.res
 
-import androidx.annotation.GuardedBy
 import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.resources.ResourceItem
 import com.android.ide.common.resources.ResourceRepository
@@ -22,7 +21,6 @@ import com.google.common.collect.Multimap
 import com.google.common.collect.Multiset
 import com.google.common.collect.Table
 import com.google.common.collect.Tables
-import java.util.function.Predicate
 import kotlin.collections.Map.Entry
 
 /**
@@ -36,34 +34,27 @@ import kotlin.collections.Map.Entry
  */
 // TODO: The whole locking scheme for resource repositories needs to be reworked.
 abstract class MultiResourceRepository internal constructor(displayName: String) :
-  LocalResourceRepository(displayName), Disposable {
+  LocalResourceRepository(displayName) {
 
-  @GuardedBy("ITEM_MAP_LOCK")
   private var myLocalResources: ImmutableList<LocalResourceRepository> = ImmutableList.of()
 
-  @GuardedBy("ITEM_MAP_LOCK")
   private var myLibraryResources: ImmutableList<LocalResourceRepository> = ImmutableList.of()
 
   /** A concatenation of [.myLocalResources] and [.myLibraryResources].  */
-  @GuardedBy("ITEM_MAP_LOCK")
   private var myChildren: ImmutableList<ResourceRepository> = ImmutableList.of()
 
   /** Leaf resource repositories keyed by namespace.  */
-  @GuardedBy("ITEM_MAP_LOCK")
   private var myLeafsByNamespace: ImmutableListMultimap<ResourceNamespace, SingleNamespaceResourceRepository> =
     ImmutableListMultimap.of()
 
   /** Contained single-namespace resource repositories keyed by namespace.  */
-  @GuardedBy("ITEM_MAP_LOCK")
   private var myRepositoriesByNamespace: ImmutableListMultimap<ResourceNamespace, SingleNamespaceResourceRepository> =
     ImmutableListMultimap.of()
 
-  @GuardedBy("ITEM_MAP_LOCK")
   private var myResourceComparator =
     ResourceItemComparator(ResourcePriorityComparator(ImmutableList.of()))
 
   /** Names of resources from local leaf repositories.  */
-  @GuardedBy("ITEM_MAP_LOCK")
   private val myResourceNames: Table<SingleNamespaceResourceRepository, ResourceType, Set<String>> =
     Tables.newCustomTable(HashMap()) {
       Maps.newEnumMap(
@@ -71,48 +62,33 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       )
     }
 
-  val localResources: ImmutableList<LocalResourceRepository>
-    get() {
-      synchronized(ITEM_MAP_LOCK) { return myLocalResources }
-    }
-  val libraryResources: ImmutableList<LocalResourceRepository>
-    get() {
-      synchronized(ITEM_MAP_LOCK) { return myLibraryResources }
-    }
-  val children: List<Any>
-    get() {
-      synchronized(ITEM_MAP_LOCK) { return myChildren }
-    }
-
   protected fun setChildren(
     localResources: List<LocalResourceRepository>,
     libraryResources: Collection<LocalResourceRepository>,
     otherResources: Collection<ResourceRepository>
   ) {
-    synchronized(ITEM_MAP_LOCK) {
-      myLocalResources.forEach { it.removeParent(this) }
-      myLocalResources = ImmutableList.copyOf(localResources)
-      myLibraryResources = ImmutableList.copyOf(libraryResources)
-      val size: Int =
-        myLocalResources.size + myLibraryResources.size + otherResources.size
-      myChildren =
-        ImmutableList.builderWithExpectedSize<ResourceRepository>(size)
-          .addAll(myLocalResources)
-          .addAll(myLibraryResources)
-          .addAll(otherResources)
-          .build()
+    myLocalResources.forEach { it.removeParent(this) }
+    myLocalResources = ImmutableList.copyOf(localResources)
+    myLibraryResources = ImmutableList.copyOf(libraryResources)
+    val size: Int =
+      myLocalResources.size + myLibraryResources.size + otherResources.size
+    myChildren =
+      ImmutableList.builderWithExpectedSize<ResourceRepository>(size)
+        .addAll(myLocalResources)
+        .addAll(myLibraryResources)
+        .addAll(otherResources)
+        .build()
 
-      var mapBuilder: ImmutableListMultimap.Builder<ResourceNamespace, SingleNamespaceResourceRepository> =
-        ImmutableListMultimap.builder()
-      computeLeafs(this, mapBuilder)
-      myLeafsByNamespace = mapBuilder.build()
-      mapBuilder = ImmutableListMultimap.builder()
-      computeNamespaceMap(this, mapBuilder)
-      myRepositoriesByNamespace = mapBuilder.build()
-      myResourceComparator = ResourceItemComparator(
-        ResourcePriorityComparator(myLeafsByNamespace.values())
-      )
-    }
+    var mapBuilder: ImmutableListMultimap.Builder<ResourceNamespace, SingleNamespaceResourceRepository> =
+      ImmutableListMultimap.builder()
+    computeLeafs(this, mapBuilder)
+    myLeafsByNamespace = mapBuilder.build()
+    mapBuilder = ImmutableListMultimap.builder()
+    computeNamespaceMap(this, mapBuilder)
+    myRepositoriesByNamespace = mapBuilder.build()
+    myResourceComparator = ResourceItemComparator(
+      ResourcePriorityComparator(myLeafsByNamespace.values())
+    )
   }
 
   /**
@@ -124,25 +100,21 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
    * @return a list of namespaces for the given namespace
    */
   fun getRepositoriesForNamespace(namespace: ResourceNamespace): List<SingleNamespaceResourceRepository> {
-    synchronized(ITEM_MAP_LOCK) {
-      return myRepositoriesByNamespace.get(namespace)
-    }
+    return myRepositoriesByNamespace.get(namespace)
   }
 
   override fun getNamespaces(): Set<ResourceNamespace> {
-    synchronized(ITEM_MAP_LOCK) { return myRepositoriesByNamespace.keySet() }
+    return myRepositoriesByNamespace.keySet()
   }
 
   override fun accept(visitor: ResourceVisitor): VisitResult {
-    synchronized(ITEM_MAP_LOCK) {
-      namespaces.forEach { namespace ->
-        if (visitor.shouldVisitNamespace(namespace)) {
-          ResourceType.values().forEach { type ->
-            if (visitor.shouldVisitResourceType(type)) {
-              getMap(namespace, type)?.values()?.forEach { item ->
-                if (visitor.visit(item) == ABORT) {
-                  return ABORT
-                }
+    namespaces.forEach { namespace ->
+      if (visitor.shouldVisitNamespace(namespace)) {
+        ResourceType.values().forEach { type ->
+          if (visitor.shouldVisitResourceType(type)) {
+            getMap(namespace, type)?.values()?.forEach { item ->
+              if (visitor.visit(item) == ABORT) {
+                return ABORT
               }
             }
           }
@@ -152,7 +124,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
     return CONTINUE
   }
 
-  @GuardedBy("ITEM_MAP_LOCK")
   override fun getMap(
     namespace: ResourceNamespace,
     resourceType: ResourceType
@@ -189,16 +160,8 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
     return map
   }
 
-  override fun dispose() {
-    synchronized(ITEM_MAP_LOCK) {
-      for (child in myLocalResources) {
-        child.removeParent(this)
-      }
-    }
-  }
-
   override fun getLeafResourceRepositories(): Collection<SingleNamespaceResourceRepository> {
-    synchronized(ITEM_MAP_LOCK) { return myLeafsByNamespace.values() }
+    return myLeafsByNamespace.values()
   }
 
   private class ResourcePriorityComparator constructor(repositories: Collection<SingleNamespaceResourceRepository>) :
@@ -270,17 +233,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
         mySize -= removed.size
       }
       return removed ?: ImmutableList.of()
-    }
-
-    fun removeIf(key: String, filter: Predicate<ResourceItem>): Boolean {
-      val list = myMap[key] ?: return false
-      val oldSize = list.size
-      val removed = list.removeIf(filter)
-      mySize += list.size - oldSize
-      if (list.isEmpty()) {
-        myMap.remove(key)
-      }
-      return removed
     }
 
     override fun clear() {
@@ -480,26 +432,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
         return modified
       }
 
-      fun removeIf(filter: Predicate<in ResourceItem>): Boolean {
-        var removed = false
-        var i = myResourceItems.size
-        while (--i >= 0) {
-          val nested: MutableList<ResourceItem> = myResourceItems[i]
-          var j = nested.size
-          while (--j >= 0) {
-            val item: ResourceItem = nested[j]
-            if (filter.test(item)) {
-              nested.removeAt(j)
-              removed = true
-            }
-          }
-          if (nested.isEmpty()) {
-            myResourceItems.removeAt(i)
-          }
-        }
-        return removed
-      }
-
       /**
        * Removes the given resource item from the first `end` elements of [.myResourceItems].
        *
@@ -604,7 +536,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
 
   companion object {
 
-    @GuardedBy("ITEM_MAP_LOCK")
     private fun computeLeafs(
       repository: ResourceRepository,
       result: ImmutableListMultimap.Builder<ResourceNamespace, SingleNamespaceResourceRepository>
@@ -618,7 +549,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       }
     }
 
-    @GuardedBy("ITEM_MAP_LOCK")
     private fun computeNamespaceMap(
       repository: ResourceRepository,
       result: ImmutableListMultimap.Builder<ResourceNamespace, SingleNamespaceResourceRepository>
@@ -633,7 +563,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       }
     }
 
-    @GuardedBy("ITEM_MAP_LOCK")
     private fun getResourcesUnderLock(
       repository: SingleNamespaceResourceRepository,
       namespace: ResourceNamespace,
