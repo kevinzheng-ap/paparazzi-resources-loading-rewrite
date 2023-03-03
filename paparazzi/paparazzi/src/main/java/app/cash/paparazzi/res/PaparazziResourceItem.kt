@@ -1,21 +1,5 @@
 package app.cash.paparazzi.res
 
-/*
- * Copyright (C) 2016 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 import com.android.SdkConstants.ATTR_FORMAT
 import com.android.SdkConstants.ATTR_INDEX
 import com.android.SdkConstants.ATTR_NAME
@@ -53,7 +37,8 @@ import org.w3c.dom.Element
 import java.io.File
 import java.util.EnumSet
 
-class PsiResourceItem constructor(
+
+class PaparazziResourceItem constructor(
   private val file: File,
   private val name: String,
   private val type: ResourceType,
@@ -79,16 +64,18 @@ class PsiResourceItem constructor(
     return namespace
   }
 
-  override fun getLibraryName(): String {
-    TODO("Not yet implemented")
+  override fun getLibraryName(): String? {
+    return null
   }
 
-  override fun getReferenceToSelf(): ResourceReference {
-    TODO("Not yet implemented")
-  }
+  override fun getReferenceToSelf(): ResourceReference =
+    ResourceReference(getNamespace(), type, name)
 
   override fun getKey(): String {
-    TODO("Not yet implemented")
+    val qualifiers = configuration.qualifierString
+    return if (qualifiers.isNotEmpty()) {
+      (type.getName() + '-') + qualifiers + '/' + name
+    } else type.getName() + '/' + name
   }
 
   override fun getResourceValue(): ResourceValue {
@@ -267,49 +254,36 @@ class PsiResourceItem constructor(
     attrValue.description = getDescription(attrTag)
     val formats: MutableSet<AttributeFormat> = EnumSet.noneOf(AttributeFormat::class.java)
     val formatString = getAttributeValue(attrTag, ATTR_FORMAT)
-    if (formatString != null) {
-      formats.addAll(AttributeFormat.parse(formatString))
-    }
+    formats.addAll(AttributeFormat.parse(formatString))
     for (child in XmlUtils.getSubTags(attrTag)) {
-      val tagName: String = child.tagName // TODO: getName() equal to tagName?
+      val tagName: String = child.tagName
       if (TAG_ENUM == tagName) {
         formats.add(ENUM)
       } else if (TAG_FLAG == tagName) {
         formats.add(FLAGS)
       }
       val name = getAttributeValue(child, ATTR_NAME)
-      if (name != null) {
-        var numericValue: Int? = null
-        val value = getAttributeValue(child, ATTR_VALUE)
-        if (value != null) {
-          try {
-            // Use Long.decode to deal with hexadecimal values greater than 0x7FFFFFFF.
-            numericValue = java.lang.Long.decode(value).toInt()
-          } catch (ignored: NumberFormatException) {
-          }
-        }
-        attrValue.addValue(name, numericValue, getDescription(child))
-      }
+      var numericValue: Int? = null
+      val value = getAttributeValue(child, ATTR_VALUE)
+      try {
+        // Use Long.decode to deal with hexadecimal values greater than 0x7FFFFFFF.
+        numericValue = java.lang.Long.decode(value).toInt()
+      } catch (ignored: NumberFormatException) { }
+      attrValue.addValue(name, numericValue, getDescription(child))
     }
     attrValue.setFormats(formats)
     return attrValue
   }
 
-  // TODO
   private fun getDescription(tag: Element): String? {
-//    val comment: XmlComment = XmlUtil.findPreviousComment(tag)
-//    if (comment != null) {
-//      val text: String = comment.getCommentText()
-//      return text.trim { it <= ' ' }
-//    }
-    return null
+    return XmlUtils.getPreviousCommentText(tag)
   }
 
   /**
    * Returns the text content of a given tag
    */
   private fun getTextContent(tag: Element): String {
-    // TODO: Not sure if this is right
+    // TODO
     return tag.textContent
   }
 
@@ -326,12 +300,10 @@ class PsiResourceItem constructor(
     }
   }
 
-  override fun getSource(): PathString {
-    TODO("Not yet implemented")
-  }
+  override fun getSource(): PathString = PathString(file)
 
   override fun isFileBased(): Boolean {
-    TODO("Not yet implemented")
+    return tag == null
   }
 }
 

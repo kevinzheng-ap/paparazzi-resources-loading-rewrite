@@ -1,36 +1,33 @@
 // Copyright Square, Inc.
 package app.cash.paparazzi.res
 
-import androidx.annotation.GuardedBy
 import com.android.ide.common.rendering.api.ResourceNamespace
+import com.android.ide.common.resources.AbstractResourceRepository
 import com.android.ide.common.resources.ResourceItem
 import com.android.ide.common.resources.ResourceVisitor
 import com.android.ide.common.resources.ResourceVisitor.VisitResult
 import com.android.ide.common.resources.ResourceVisitor.VisitResult.CONTINUE
 import com.android.ide.common.resources.SingleNamespaceResourceRepository
 import com.android.resources.ResourceType
+import com.google.common.collect.ImmutableListMultimap
+import com.google.common.collect.ImmutableSet
 import com.google.common.collect.ListMultimap
 
 // TODO: The whole locking scheme for resource repositories needs to be reworked.
 abstract class LocalResourceRepository protected constructor(val displayName: String) :
-  AbstractResourceRepositoryWithLocking() {
+  AbstractResourceRepository() {
 
-  @GuardedBy("ITEM_MAP_LOCK")
   private var myParents: MutableList<MultiResourceRepository>? = null
 
   fun addParent(parent: MultiResourceRepository) {
-    synchronized(ITEM_MAP_LOCK) {
-      if (myParents == null) {
-        myParents = ArrayList(2) // Don't expect many parents
-      }
-      myParents!!.add(parent)
+    if (myParents == null) {
+      myParents = ArrayList(2) // Don't expect many parents
     }
+    myParents!!.add(parent)
   }
 
   fun removeParent(parent: MultiResourceRepository) {
-    synchronized(ITEM_MAP_LOCK) {
-      myParents?.remove(parent)
-    }
+    myParents?.remove(parent)
   }
 
   override fun getPublicResources(
@@ -41,11 +38,33 @@ abstract class LocalResourceRepository protected constructor(val displayName: St
     throw UnsupportedOperationException("Not implemented yet")
   }
 
+  protected abstract fun getMap(
+    namespace: ResourceNamespace,
+    resourceType: ResourceType,
+  ): ListMultimap<String, ResourceItem>?
+
+  override fun getResourcesInternal(
+    namespace: ResourceNamespace,
+    resourceType: ResourceType,
+  ): ListMultimap<String, ResourceItem> {
+    return getMap(namespace, resourceType) ?: ImmutableListMultimap.of()
+  }
+
+  override fun getResourceNames(
+    namespace: ResourceNamespace,
+    resourceType: ResourceType,
+  ): Set<String> {
+    val map = getMap(namespace, resourceType)
+    return if (map == null) ImmutableSet.of() else ImmutableSet.copyOf(
+      map.keySet()
+    )
+  }
+
   /**
    * Package accessible version of [.getMap].
    * Do not call outside of [MultiResourceRepository].
    */
-  @GuardedBy("ITEM_MAP_LOCK") fun getMapPackageAccessible(
+  fun getMapPackageAccessible(
     namespace: ResourceNamespace,
     type: ResourceType
   ): ListMultimap<String, ResourceItem>? {
@@ -55,7 +74,6 @@ abstract class LocalResourceRepository protected constructor(val displayName: St
   open class EmptyRepository(private val myNamespace: ResourceNamespace) :
     LocalResourceRepository(""), SingleNamespaceResourceRepository {
 
-    @GuardedBy("ITEM_MAP_LOCK")
     override fun getMap(
       namespace: ResourceNamespace,
       resourceType: ResourceType
