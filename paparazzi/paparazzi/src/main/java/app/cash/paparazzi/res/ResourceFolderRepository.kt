@@ -23,10 +23,10 @@ import org.w3c.dom.Node
 import java.io.File
 import java.util.EnumMap
 
-class ResourceFolderRepository constructor(
+internal class ResourceFolderRepository constructor(
   resourceDir: String,
   namespace: ResourceNamespace,
-) : LocalResourceRepository(resourceDir), SingleNamespaceResourceRepository {
+) : LocalResourceRepository(), SingleNamespaceResourceRepository {
 
   private val myNamespace: ResourceNamespace
 
@@ -52,6 +52,10 @@ class ResourceFolderRepository constructor(
     }
   }
 
+  private fun getOrCreateMap(type: ResourceType): ListMultimap<String, ResourceItem> {
+    return myResourceTable.computeIfAbsent(type) { LinkedListMultimap.create() }
+  }
+
   override fun accept(visitor: ResourceVisitor): ResourceVisitor.VisitResult {
     if (visitor.shouldVisitNamespace(myNamespace)) {
       if (acceptByResources(myResourceTable, visitor) == ResourceVisitor.VisitResult.ABORT) {
@@ -71,16 +75,9 @@ class ResourceFolderRepository constructor(
 
   override fun getMap(
     namespace: ResourceNamespace,
-    type: ResourceType
+    resourceType: ResourceType
   ): ListMultimap<String, ResourceItem>? {
-    return if (namespace != myNamespace) {
-      null
-    } else myResourceTable[type]
-  }
-
-  private fun getOrCreateMap(type: ResourceType): ListMultimap<String, ResourceItem> {
-    // Use LinkedListMultimap to preserve ordering for editors that show original order.
-    return myResourceTable.computeIfAbsent(type) { LinkedListMultimap.create() }
+    return myResourceTable[resourceType].takeIf { namespace == myNamespace }
   }
 
   // This reads the value.xml
@@ -89,7 +86,6 @@ class ResourceFolderRepository constructor(
     file: File,
   ): Boolean {
     var added = false
-    // TODO
     if (file.extension == "xml") {
       val reader = XmlUtils.getUtfReader(file)
       val document: Document? = XmlUtils.parseDocument(reader, true)
@@ -98,10 +94,10 @@ class ResourceFolderRepository constructor(
         if (root != TAG_RESOURCES) {
           return false
         }
-        val subTags = XmlUtils.getSubTags(document.firstChild) // Not recursive, right?
+        val subTags = XmlUtils.getSubTags(document.firstChild)
         for (tag in subTags) {
           val name: String = tag.getAttribute(ATTR_NAME)
-          val type: ResourceType? = getResourceTypeForResourceTag(tag)
+          val type: ResourceType? = ResourceType.fromXmlTag(tag)
           if (type != null && isValidValueResourceName(name)) {
             val item = PaparazziResourceItem(
               file = file,
@@ -145,9 +141,7 @@ class ResourceFolderRepository constructor(
     return added
   }
 
-  private fun getResourceTypeForResourceTag(tag: Node): ResourceType? = ResourceType.fromXmlTag(tag)
-
-  fun getFolderType(file: File): ResourceFolderType {
+  private fun getFolderType(file: File): ResourceFolderType {
     return ResourceFolderType.getFolderType(file.parentFile.name)
   }
 

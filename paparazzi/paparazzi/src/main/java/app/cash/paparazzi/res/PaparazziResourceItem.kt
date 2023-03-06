@@ -37,8 +37,7 @@ import org.w3c.dom.Element
 import java.io.File
 import java.util.EnumSet
 
-
-class PaparazziResourceItem constructor(
+internal class PaparazziResourceItem constructor(
   private val file: File,
   private val name: String,
   private val type: ResourceType,
@@ -80,22 +79,17 @@ class PaparazziResourceItem constructor(
 
   override fun getResourceValue(): ResourceValue {
     return if (tag == null) {
-      val density = if (type == ResourceType.DRAWABLE || type == ResourceType.MIPMAP) getFolderDensity() else null
+      val density =
+        if (type == ResourceType.DRAWABLE || type == ResourceType.MIPMAP) configuration.densityQualifier?.value else null
       val path = file.absolutePath
       if (density != null) {
-        DensityBasedResourceValueImpl (getNamespace(), type, name, path, density, null);
+        DensityBasedResourceValueImpl(getNamespace(), type, name, path, density, null);
       } else {
-        ResourceValueImpl (getNamespace(), type, name, path, null);
+        ResourceValueImpl(getNamespace(), type, name, path, null);
       }
     } else {
       parseXmlToResourceValueSafe(tag)
     }
-  }
-
-  private fun getFolderDensity(): Density? {
-    val configuration = configuration
-    val densityQualifier = configuration.densityQualifier
-    return densityQualifier?.value
   }
 
   private fun parseXmlToResourceValueSafe(tag: Element): ResourceValue {
@@ -122,7 +116,7 @@ class PaparazziResourceItem constructor(
                 ATTR_INDEX,
                 TOOLS_URI
               )
-            return index.toInt() ?: super.getDefaultIndex()
+            return index.toInt()
           }
         })
 
@@ -268,7 +262,8 @@ class PaparazziResourceItem constructor(
       try {
         // Use Long.decode to deal with hexadecimal values greater than 0x7FFFFFFF.
         numericValue = java.lang.Long.decode(value).toInt()
-      } catch (ignored: NumberFormatException) { }
+      } catch (ignored: NumberFormatException) {
+      }
       attrValue.addValue(name, numericValue, getDescription(child))
     }
     attrValue.setFormats(formats)

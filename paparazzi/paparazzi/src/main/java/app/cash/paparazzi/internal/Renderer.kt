@@ -74,7 +74,7 @@ internal class Renderer(
         ) to
           ResourceRepositoryBridge.New(
             ProjectResourceRepository.create(
-              resourceDirectories = environment.localeResDirs,
+              localResourceDirs = environment.localeResDirs,
               namespace = ResourceNamespace.TODO()
             )
           )
