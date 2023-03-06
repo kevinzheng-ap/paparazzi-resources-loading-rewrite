@@ -48,7 +48,7 @@ internal class Renderer(
     }
 
     val projectResources = ProjectResourceRepository.create(
-      resourceDirectories = environment.localeResDirs,
+      localResourceDirs = environment.localeResDirs,
       namespace = ResourceNamespace.TODO()
     )
 

@@ -13,11 +13,15 @@ import com.google.common.collect.ImmutableListMultimap
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.ListMultimap
 
-// TODO: The whole locking scheme for resource repositories needs to be reworked.
-abstract class LocalResourceRepository protected constructor(val displayName: String) :
+internal abstract class LocalResourceRepository protected constructor() :
   AbstractResourceRepository() {
 
   private var myParents: MutableList<MultiResourceRepository>? = null
+
+  protected abstract fun getMap(
+    namespace: ResourceNamespace,
+    resourceType: ResourceType,
+  ): ListMultimap<String, ResourceItem>?
 
   fun addParent(parent: MultiResourceRepository) {
     if (myParents == null) {
@@ -38,11 +42,6 @@ abstract class LocalResourceRepository protected constructor(val displayName: St
     throw UnsupportedOperationException("Not implemented yet")
   }
 
-  protected abstract fun getMap(
-    namespace: ResourceNamespace,
-    resourceType: ResourceType,
-  ): ListMultimap<String, ResourceItem>?
-
   override fun getResourcesInternal(
     namespace: ResourceNamespace,
     resourceType: ResourceType,
@@ -55,9 +54,7 @@ abstract class LocalResourceRepository protected constructor(val displayName: St
     resourceType: ResourceType,
   ): Set<String> {
     val map = getMap(namespace, resourceType)
-    return if (map == null) ImmutableSet.of() else ImmutableSet.copyOf(
-      map.keySet()
-    )
+    return if (map == null) ImmutableSet.of() else ImmutableSet.copyOf(map.keySet())
   }
 
   /**
@@ -72,7 +69,7 @@ abstract class LocalResourceRepository protected constructor(val displayName: St
   }
 
   open class EmptyRepository(private val myNamespace: ResourceNamespace) :
-    LocalResourceRepository(""), SingleNamespaceResourceRepository {
+    LocalResourceRepository(), SingleNamespaceResourceRepository {
 
     override fun getMap(
       namespace: ResourceNamespace,

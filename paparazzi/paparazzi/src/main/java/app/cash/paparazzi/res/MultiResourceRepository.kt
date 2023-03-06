@@ -23,38 +23,24 @@ import com.google.common.collect.Table
 import com.google.common.collect.Tables
 import kotlin.collections.Map.Entry
 
-/**
- * A super class for several of the other repositories. Its only purpose is to be able to combine
- * multiple resource repositories and expose it as a single one, applying the “override” semantics
- * of resources: earlier children defining the same resource namespace/type/name combination will
- * replace/hide any subsequent definitions of the same resource.
- *
- *
- * In the resource repository hierarchy, MultiResourceRepository is an internal node, never a leaf.
- */
-// TODO: The whole locking scheme for resource repositories needs to be reworked.
-abstract class MultiResourceRepository internal constructor(displayName: String) :
-  LocalResourceRepository(displayName) {
+internal abstract class MultiResourceRepository protected constructor() :
+  LocalResourceRepository() {
 
   private var myLocalResources: ImmutableList<LocalResourceRepository> = ImmutableList.of()
 
   private var myLibraryResources: ImmutableList<LocalResourceRepository> = ImmutableList.of()
 
-  /** A concatenation of [.myLocalResources] and [.myLibraryResources].  */
   private var myChildren: ImmutableList<ResourceRepository> = ImmutableList.of()
 
-  /** Leaf resource repositories keyed by namespace.  */
   private var myLeafsByNamespace: ImmutableListMultimap<ResourceNamespace, SingleNamespaceResourceRepository> =
     ImmutableListMultimap.of()
 
-  /** Contained single-namespace resource repositories keyed by namespace.  */
   private var myRepositoriesByNamespace: ImmutableListMultimap<ResourceNamespace, SingleNamespaceResourceRepository> =
     ImmutableListMultimap.of()
 
   private var myResourceComparator =
     ResourceItemComparator(ResourcePriorityComparator(ImmutableList.of()))
 
-  /** Names of resources from local leaf repositories.  */
   private val myResourceNames: Table<SingleNamespaceResourceRepository, ResourceType, Set<String>> =
     Tables.newCustomTable(HashMap()) {
       Maps.newEnumMap(
@@ -91,18 +77,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
     )
   }
 
-  /**
-   * Returns resource repositories for the given namespace. In case of nested single-namespace repositories only the outermost
-   * repositories are returned. Collectively the returned repositories are guaranteed to contain all resources in the given namespace
-   * contained in this repository.
-   *
-   * @param namespace the namespace to return resource repositories for
-   * @return a list of namespaces for the given namespace
-   */
-  fun getRepositoriesForNamespace(namespace: ResourceNamespace): List<SingleNamespaceResourceRepository> {
-    return myRepositoriesByNamespace.get(namespace)
-  }
-
   override fun getNamespaces(): Set<ResourceNamespace> {
     return myRepositoriesByNamespace.keySet()
   }
@@ -132,13 +106,13 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       myLeafsByNamespace.get(namespace)
     if (repositoriesForNamespace.size == 1) {
       val repository: SingleNamespaceResourceRepository = repositoriesForNamespace[0]
-      return getResourcesUnderLock(repository, namespace, resourceType)
+      return getResources(repository, namespace, resourceType)
     }
     var map: ListMultimap<String, ResourceItem>? = null
     // Merge all items of the given type.
     for (repository in repositoriesForNamespace) {
       val items: ListMultimap<String, ResourceItem> =
-        getResourcesUnderLock(repository, namespace, resourceType)
+        getResources(repository, namespace, resourceType)
       if (!items.isEmpty) {
         if (map == null) {
           // Create a new map.
@@ -175,7 +149,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
     }
 
     override fun compare(item1: ResourceItem?, item2: ResourceItem?): Int {
-      return Integer.compare(getOrdering(item1!!), getOrdering(item2!!))
+      return getOrdering(item1!!).compareTo(getOrdering(item2!!))
     }
 
     private fun getOrdering(item: ResourceItem): Int {
@@ -185,16 +159,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
     }
   }
 
-  /**
-   * Custom implementation of [ListMultimap] that may store multiple resource items for
-   * the same folder configuration, but for readers exposes ot most one resource item per folder
-   * configuration.
-   *
-   *
-   * This ListMultimap implementation is not as robust as Guava multimaps but is sufficient
-   * for MultiResourceRepository because the latter always copies data to immutable containers
-   * before exposing it to callers.
-   */
   private class PerConfigResourceMap(private val myComparator: ResourceItemComparator) :
     ListMultimap<String, ResourceItem> {
     private val myMap: MutableMap<String?, MutableList<ResourceItem>?> = HashMap()
@@ -202,8 +166,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
     private var myValues: Values? = null
 
     override operator fun get(key: String?): List<ResourceItem> {
-      val items: List<ResourceItem>? = myMap[key]
-      return items ?: ImmutableList.of()
+      return myMap[key] ?: ImmutableList.of()
     }
 
     override fun keySet(): Set<String?> {
@@ -259,9 +222,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
     }
 
     override fun put(key: String?, item: ResourceItem?): Boolean {
-      val list: MutableList<ResourceItem> = myMap.computeIfAbsent(
-        key
-      ) { PerConfigResourceList() }!!
+      val list: MutableList<ResourceItem> = myMap.computeIfAbsent(key) { PerConfigResourceList() }!!
       val oldSize = list.size
       list.add(item!!)
       mySize += list.size - oldSize
@@ -290,9 +251,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       var oldSize = 0
       for (item in values) {
         if (list == null) {
-          list = myMap.computeIfAbsent(
-            key
-          ) { PerConfigResourceList() }
+          list = myMap.computeIfAbsent(key) { PerConfigResourceList() }
           oldSize = list!!.size
         }
         added = list.add(item!!)
@@ -303,7 +262,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       return added
     }
 
-    override fun putAll(multimap: Multimap<out String?, out ResourceItem?>): Boolean {
+    override fun putAll(multimap: Multimap<out String, out ResourceItem>): Boolean {
       multimap.asMap().entries.forEach {
         val key = it.key
         val items: Collection<ResourceItem?> = it.value
@@ -329,15 +288,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       return myMap as Map<String?, Collection<ResourceItem>>
     }
 
-    /**
-     * This class has a split personality. The class may store multiple resource items for the same
-     * folder configuration, but for callers of non-mutating methods ([.get],
-     * [.size], [Iterator.next], etc) it exposes at most one resource item per
-     * folder configuration. Which of the resource items with the same folder configuration is
-     * visible to non-mutating methods is determined by [ResourcePriorityComparator].
-     */
     private inner class PerConfigResourceList : AbstractMutableList<ResourceItem>() {
-      /** Resource items sorted by folder configurations. Nested lists are sorted by repository priority.  */
       private val myResourceItems: MutableList<MutableList<ResourceItem>> = ArrayList()
 
       override fun get(index: Int): ResourceItem {
@@ -432,14 +383,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
         return modified
       }
 
-      /**
-       * Removes the given resource item from the first `end` elements of [.myResourceItems].
-       *
-       * @param item the resource item to remove
-       * @param end the exclusive end of the range checked for existence of the item being deleted
-       * @return if the item to be deleted was found, returns its index, otherwise returns
-       * the binary complement of the index pointing to where the item would be inserted
-       */
       private fun remove(item: ResourceItem, end: Int): Int {
         val index = findConfigIndex(item, 0, end)
         if (index < 0) {
@@ -462,11 +405,6 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
         return sortedItems
       }
 
-      /**
-       * Returns index in [.myResourceItems] of the existing resource item with the same
-       * configuration as the `item` parameter. If [.myResourceItems] doesn't contains
-       * resources with the same configuration, returns binary complement of the insertion point.
-       */
       private fun findConfigIndex(item: ResourceItem, start: Int, end: Int): Int {
         val config: FolderConfiguration = item.configuration
         var low = start
@@ -563,7 +501,7 @@ abstract class MultiResourceRepository internal constructor(displayName: String)
       }
     }
 
-    private fun getResourcesUnderLock(
+    private fun getResources(
       repository: SingleNamespaceResourceRepository,
       namespace: ResourceNamespace,
       type: ResourceType
