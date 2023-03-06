@@ -139,7 +139,7 @@ internal abstract class MultiResourceRepository protected constructor() :
   }
 
   private class ResourcePriorityComparator constructor(repositories: Collection<SingleNamespaceResourceRepository>) :
-    Comparator<ResourceItem?> {
+    Comparator<ResourceItem> {
     private val repositoryOrdering: HashMap<SingleNamespaceResourceRepository, Int> = hashMapOf()
 
     init {
@@ -148,8 +148,8 @@ internal abstract class MultiResourceRepository protected constructor() :
       }
     }
 
-    override fun compare(item1: ResourceItem?, item2: ResourceItem?): Int {
-      return getOrdering(item1!!).compareTo(getOrdering(item2!!))
+    override fun compare(item1: ResourceItem, item2: ResourceItem): Int {
+      return getOrdering(item1).compareTo(getOrdering(item2))
     }
 
     private fun getOrdering(item: ResourceItem): Int {
@@ -161,9 +161,8 @@ internal abstract class MultiResourceRepository protected constructor() :
 
   private class PerConfigResourceMap(private val myComparator: ResourceItemComparator) :
     ListMultimap<String, ResourceItem> {
-    private val myMap: MutableMap<String?, MutableList<ResourceItem>?> = HashMap()
+    private val myMap: MutableMap<String?, MutableList<ResourceItem>> = HashMap()
     private var mySize = 0
-    private var myValues: Values? = null
 
     override operator fun get(key: String?): List<ResourceItem> {
       return myMap[key] ?: ImmutableList.of()
@@ -177,13 +176,8 @@ internal abstract class MultiResourceRepository protected constructor() :
       throw UnsupportedOperationException()
     }
 
-    override fun values(): Collection<ResourceItem?> {
-      var values = myValues
-      if (values == null) {
-        values = Values()
-        myValues = values
-      }
-      return values
+    override fun values(): Collection<ResourceItem> {
+      return Values()
     }
 
     override fun entries(): Collection<Entry<String, ResourceItem>> {
@@ -221,10 +215,10 @@ internal abstract class MultiResourceRepository protected constructor() :
       throw UnsupportedOperationException()
     }
 
-    override fun put(key: String?, item: ResourceItem?): Boolean {
-      val list: MutableList<ResourceItem> = myMap.computeIfAbsent(key) { PerConfigResourceList() }!!
+    override fun put(key: String?, item: ResourceItem): Boolean {
+      val list: MutableList<ResourceItem> = myMap.computeIfAbsent(key) { PerConfigResourceList() }
       val oldSize = list.size
-      list.add(item!!)
+      list.add(item)
       mySize += list.size - oldSize
       return true
     }
@@ -233,14 +227,14 @@ internal abstract class MultiResourceRepository protected constructor() :
       throw UnsupportedOperationException()
     }
 
-    override fun putAll(key: String?, values: MutableIterable<ResourceItem?>): Boolean {
+    override fun putAll(key: String?, values: MutableIterable<ResourceItem>): Boolean {
       if (values is Collection<*>) {
         if (values.isEmpty()) {
           return false
         }
         val list: MutableList<ResourceItem> = myMap.computeIfAbsent(
           key
-        ) { PerConfigResourceList() }!!
+        ) { PerConfigResourceList() }
         val oldSize = list.size
         val added = list.addAll((values as Collection<ResourceItem>))
         mySize += list.size - oldSize
@@ -252,9 +246,9 @@ internal abstract class MultiResourceRepository protected constructor() :
       for (item in values) {
         if (list == null) {
           list = myMap.computeIfAbsent(key) { PerConfigResourceList() }
-          oldSize = list!!.size
+          oldSize = list.size
         }
-        added = list.add(item!!)
+        added = list.add(item)
       }
       if (list != null) {
         mySize += list.size - oldSize
@@ -265,12 +259,12 @@ internal abstract class MultiResourceRepository protected constructor() :
     override fun putAll(multimap: Multimap<out String, out ResourceItem>): Boolean {
       multimap.asMap().entries.forEach {
         val key = it.key
-        val items: Collection<ResourceItem?> = it.value
+        val items: Collection<ResourceItem> = it.value
         if (key!!.isNotEmpty()) {
-          val list: MutableList<ResourceItem>? =
+          val list: MutableList<ResourceItem> =
             myMap.computeIfAbsent(key) { PerConfigResourceList() }
-          val oldSize = list!!.size
-          list.addAll(items.filterNotNull())
+          val oldSize = list.size
+          list.addAll(items.toList())
           mySize += list.size - oldSize
         }
       }
@@ -279,13 +273,13 @@ internal abstract class MultiResourceRepository protected constructor() :
 
     override fun replaceValues(
       key: String?,
-      values: MutableIterable<ResourceItem?>
-    ): MutableList<ResourceItem?> {
+      values: MutableIterable<ResourceItem>
+    ): MutableList<ResourceItem> {
       throw UnsupportedOperationException()
     }
 
     override fun asMap(): Map<String?, Collection<ResourceItem>> {
-      return myMap as Map<String?, Collection<ResourceItem>>
+      return myMap
     }
 
     private inner class PerConfigResourceList : AbstractMutableList<ResourceItem>() {
@@ -425,7 +419,7 @@ internal abstract class MultiResourceRepository protected constructor() :
       }
     }
 
-    private inner class Values : AbstractCollection<ResourceItem?>() {
+    private inner class Values : AbstractCollection<ResourceItem>() {
       override fun iterator(): Iterator<ResourceItem> {
         return ValuesIterator()
       }
@@ -461,11 +455,11 @@ internal abstract class MultiResourceRepository protected constructor() :
     }
   }
 
-  private class ResourceItemComparator constructor(val myPriorityComparator: Comparator<ResourceItem?>) :
-    Comparator<ResourceItem?> {
+  private class ResourceItemComparator constructor(val myPriorityComparator: Comparator<ResourceItem>) :
+    Comparator<ResourceItem> {
 
-    override fun compare(item1: ResourceItem?, item2: ResourceItem?): Int {
-      val c: Int = item1!!.configuration.compareTo(item2!!.configuration)
+    override fun compare(item1: ResourceItem, item2: ResourceItem): Int {
+      val c: Int = item1.configuration.compareTo(item2.configuration)
       return if (c != 0) {
         c
       } else myPriorityComparator.compare(item1, item2)
