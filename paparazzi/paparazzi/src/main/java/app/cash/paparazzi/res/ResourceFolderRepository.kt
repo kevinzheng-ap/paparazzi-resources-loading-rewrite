@@ -110,27 +110,25 @@ internal class ResourceFolderRepository constructor(
             added = true
             if (type === ResourceType.STYLEABLE) {
               // For styleables we also need to create attr items for its children.
-              val attrs = XmlUtils.getSubTags(tag)
-              if (attrs.count() > 0) {
-                for (child in attrs) {
-                  val attrName: String = child.getAttribute(ATTR_NAME)
-                  if (isValidValueResourceName(attrName) && !attrName.startsWith(
-                      ANDROID_NS_NAME_PREFIX
-                    ) // Only add attr nodes for elements that specify a format or have flag/enum children; otherwise
-                    // it's just a reference to an existing attr.
-                    && (child.getAttribute(ATTR_FORMAT) != null || XmlUtils.getSubTags(child)
-                      .count() > 0)
-                  ) {
-                    // Parse attr here
-                    val attrItem = PaparazziResourceItem(
-                      file = file,
-                      name = name,
-                      type = ATTR,
-                      namespace = namespace,
-                      tag = child
-                    )
-                    addToResult(attrItem, result)
-                  }
+              val attrs = XmlUtils.getSubTags(tag).iterator()
+              while (attrs.hasNext()) {
+                val child = attrs.next()
+                val attrName: String = child.getAttribute(ATTR_NAME)
+                if (isValidValueResourceName(attrName)
+                  && !attrName.startsWith(ANDROID_NS_NAME_PREFIX)
+                  // Only add attr nodes for elements that specify a format or have flag/enum children; otherwise
+                  // it's just a reference to an existing attr.
+                  && (child.getAttribute(ATTR_FORMAT) != null || XmlUtils.getSubTags(child).count() > 0)
+                ) {
+                  // Parse attr here
+                  val attrItem = PaparazziResourceItem(
+                    file = file,
+                    name = attrName,
+                    type = ATTR,
+                    namespace = namespace,
+                    tag = child
+                  )
+                  addToResult(attrItem, result)
                 }
               }
             }

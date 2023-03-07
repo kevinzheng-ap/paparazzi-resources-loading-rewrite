@@ -1,7 +1,6 @@
 package app.cash.paparazzi.res
 
 import com.android.SdkConstants.ATTR_FORMAT
-import com.android.SdkConstants.ATTR_INDEX
 import com.android.SdkConstants.ATTR_NAME
 import com.android.SdkConstants.ATTR_PARENT
 import com.android.SdkConstants.ATTR_QUANTITY
@@ -99,27 +98,20 @@ internal class PaparazziResourceItem constructor(
         parseStyleValue(tag, StyleResourceValueImpl(getNamespace(), name, parent, null))
       }
 
-      ResourceType.STYLEABLE -> parseDeclareStyleable(
-        tag,
-        StyleableResourceValueImpl(getNamespace(), name, null, null)
-      )
+      ResourceType.STYLEABLE -> {
+        parseDeclareStyleable(
+          tag,
+          StyleableResourceValueImpl(getNamespace(), name, null, null)
+        )
+      }
 
-      ResourceType.ATTR -> parseAttrValue(tag, AttrResourceValueImpl(getNamespace(), name, null))
+      ResourceType.ATTR -> {
+        parseAttrValue(tag, AttrResourceValueImpl(getNamespace(), name, null))
+      }
       ResourceType.ARRAY -> parseArrayValue(
         tag,
-        object : ArrayResourceValueImpl(getNamespace(), name, null) {
-          // Allow the user to specify a specific element to use via tools:index
-          override fun getDefaultIndex(): Int {
-            val index: String =
-              // TODO: Does getAttributeValue map to getAttributeNS?
-              tag.getAttributeNS(
-                ATTR_INDEX,
-                TOOLS_URI
-              )
-            return index.toInt()
-          }
-        })
-
+        ArrayResourceValueImpl(getNamespace(), name, null)
+      )
       ResourceType.PLURALS -> parsePluralsValue(
         tag,
         object : PluralsResourceValueImpl(getNamespace(), name, null, null) {
@@ -249,7 +241,9 @@ internal class PaparazziResourceItem constructor(
     val formats: MutableSet<AttributeFormat> = EnumSet.noneOf(AttributeFormat::class.java)
     val formatString = getAttributeValue(attrTag, ATTR_FORMAT)
     formats.addAll(AttributeFormat.parse(formatString))
-    for (child in XmlUtils.getSubTags(attrTag)) {
+    val subtags = XmlUtils.getSubTags(attrTag).iterator()
+    while (subtags.hasNext()) {
+      val child = subtags.next()
       val tagName: String = child.tagName
       if (TAG_ENUM == tagName) {
         formats.add(ENUM)
