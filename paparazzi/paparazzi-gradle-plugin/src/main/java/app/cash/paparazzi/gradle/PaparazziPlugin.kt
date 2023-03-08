@@ -19,6 +19,7 @@ import app.cash.paparazzi.NATIVE_LIB_VERSION
 import app.cash.paparazzi.VERSION
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.tasks.MergeSourceSetFolders
 import com.android.ide.common.symbols.getPackageNameFromManifest
 import org.gradle.api.Action
@@ -26,8 +27,12 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.ArtifactView
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.artifacts.transform.UnzipTransform
 import org.gradle.api.logging.LogLevel.LIFECYCLE
@@ -82,6 +87,22 @@ class PaparazziPlugin : Plugin<Project> {
         .asFileTree
         .files
 
+      // external resources
+      // https://android.googlesource.com/platform/tools/base/+/96015063acd3455a76cdf1cc71b23b0828c0907f/build-system/gradle-core/src/main/java/com/android/build/gradle/tasks/MergeResources.kt#875
+      val runtimeResources = variant.runtimeConfiguration
+        .incoming
+        .artifactView { config: ArtifactView.ViewConfiguration ->
+          config.attributes { container: AttributeContainer ->
+            container.attribute(
+              AndroidArtifacts.ARTIFACT_TYPE,
+              AndroidArtifacts.ArtifactType.ANDROID_RES.type
+            )
+          }
+        }
+        .artifacts
+        .artifactFiles
+        .asFileTree
+
       val mergeResourcesOutputDir = variant.mergeResourcesProvider.flatMap { it.outputDir }
       val mergeAssetsProvider =
         project.tasks.named("merge${variantSlug}Assets") as TaskProvider<MergeSourceSetFolders>
@@ -113,6 +134,7 @@ class PaparazziPlugin : Plugin<Project> {
         task.compileSdkVersion.set(android.compileSdkVersion())
         task.mergeAssetsOutput.set(mergeAssetsOutputDir)
         task.localResDirs.set(resDirs.joinToString(","))
+        task.libraryResDirs.set(runtimeResources.files.joinToString(","))
         task.paparazziResources.set(project.layout.buildDirectory.file("intermediates/paparazzi/${variant.name}/resources.txt"))
       }
 

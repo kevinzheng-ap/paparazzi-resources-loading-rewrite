@@ -17,7 +17,6 @@
 package app.cash.paparazzi.internal
 
 import app.cash.paparazzi.DeviceConfig
-import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated.ResourceRepository
 import app.cash.paparazzi.internal.parsers.LayoutPullParser
 import com.android.SdkConstants
 import com.android.ide.common.rendering.api.AssetRepository
@@ -26,6 +25,7 @@ import com.android.ide.common.rendering.api.ResourceReference
 import com.android.ide.common.rendering.api.SessionParams
 import com.android.ide.common.rendering.api.SessionParams.Key
 import com.android.ide.common.rendering.api.SessionParams.RenderingMode
+import com.android.ide.common.resources.ResourceRepository
 import com.android.ide.common.resources.ResourceResolver
 import com.android.ide.common.resources.getConfiguredResources
 import com.android.layoutlib.bridge.Bridge
@@ -38,7 +38,7 @@ internal data class SessionParamsBuilder(
   private val logger: PaparazziLogger,
   private val frameworkResources: ResourceRepository,
   private val assetRepository: AssetRepository,
-  private val projectResources: com.android.ide.common.resources.ResourceRepository,
+  private val projectResources: ResourceRepository,
   private val deviceConfig: DeviceConfig = DeviceConfig.NEXUS_5,
   private val renderingMode: RenderingMode = RenderingMode.NORMAL,
   private val targetSdk: Int = 22,
@@ -81,7 +81,7 @@ internal data class SessionParamsBuilder(
       mapOf(
         ResourceNamespace.ANDROID to frameworkResources.getConfiguredResources(
           folderConfiguration
-        ),
+        ).row(ResourceNamespace.ANDROID),
         ResourceNamespace.TODO() to projectResources.getConfiguredResources(
           folderConfiguration
         ).row(ResourceNamespace.TODO())

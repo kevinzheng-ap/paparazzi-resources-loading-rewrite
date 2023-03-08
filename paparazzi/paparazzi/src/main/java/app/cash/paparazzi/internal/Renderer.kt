@@ -42,13 +42,14 @@ internal class Renderer(
   /** Initialize the bridge and the resource maps. */
   fun prepare(): SessionParamsBuilder {
     val platformDataResDir = File("${environment.platformDir}/data/res")
-    val frameworkResources = FrameworkResources(FolderWrapper(platformDataResDir)).apply {
-      loadResources()
-      loadPublicResources(logger)
-    }
+    val frameworkResources = ProjectResourceRepository.create(
+      localResourceDirs = platformDataResDir.listFiles()!!.map { it.listFiles()?.map { it.absolutePath } ?: emptyList() }.flatten(),
+      namespace = ResourceNamespace.ANDROID,
+    )
 
     val projectResources = ProjectResourceRepository.create(
       localResourceDirs = environment.localeResDirs,
+      libraryResourceDirs = environment.libraryResDirs,
       namespace = ResourceNamespace.TODO()
     )
 

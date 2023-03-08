@@ -25,11 +25,12 @@ import com.android.ide.common.rendering.api.StyleResourceValueImpl
 import com.android.ide.common.rendering.api.StyleableResourceValueImpl
 import com.android.ide.common.rendering.api.TextResourceValueImpl
 import com.android.ide.common.resources.ResourceItem
+import com.android.ide.common.resources.SingleNamespaceResourceRepository
 import com.android.ide.common.resources.ValueXmlHelper
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.ide.common.util.PathString
-import com.android.resources.Density
 import com.android.resources.ResourceType
+import com.android.resources.ResourceType.PUBLIC
 import com.android.resources.ResourceUrl
 import com.android.utils.XmlUtils
 import org.w3c.dom.Element
@@ -40,7 +41,7 @@ internal class PaparazziResourceItem constructor(
   private val file: File,
   private val name: String,
   private val type: ResourceType,
-  private val namespace: ResourceNamespace,
+  private val repository: ResourceFolderRepository,
   private val tag: Element?
 ) : ResourceItem {
   private val folderConfiguration: FolderConfiguration =
@@ -59,15 +60,19 @@ internal class PaparazziResourceItem constructor(
   }
 
   override fun getNamespace(): ResourceNamespace {
-    return namespace
+    return repository.namespace
   }
 
   override fun getLibraryName(): String? {
     return null
   }
 
+  override fun getRepository(): SingleNamespaceResourceRepository {
+    return repository
+  }
+
   override fun getReferenceToSelf(): ResourceReference =
-    ResourceReference(getNamespace(), type, name)
+    ResourceReference(namespace, type, name)
 
   override fun getKey(): String {
     val qualifiers = configuration.qualifierString
@@ -77,14 +82,14 @@ internal class PaparazziResourceItem constructor(
   }
 
   override fun getResourceValue(): ResourceValue {
-    return if (tag == null) {
+    return if (tag == null || type == PUBLIC) {
       val density =
         if (type == ResourceType.DRAWABLE || type == ResourceType.MIPMAP) configuration.densityQualifier?.value else null
       val path = file.absolutePath
       if (density != null) {
-        DensityBasedResourceValueImpl(getNamespace(), type, name, path, density, null);
+        DensityBasedResourceValueImpl(namespace, type, name, path, density, null);
       } else {
-        ResourceValueImpl(getNamespace(), type, name, path, null);
+        ResourceValueImpl(namespace, type, name, path, null);
       }
     } else {
       parseXmlToResourceValueSafe(tag)
@@ -94,27 +99,27 @@ internal class PaparazziResourceItem constructor(
   private fun parseXmlToResourceValueSafe(tag: Element): ResourceValue {
     val value: ResourceValueImpl = when (type) {
       ResourceType.STYLE -> {
-        val parent: String = getAttributeValue(tag, ATTR_PARENT)
-        parseStyleValue(tag, StyleResourceValueImpl(getNamespace(), name, parent, null))
+        val parent = getAttributeValue(tag, ATTR_PARENT).takeIf { it.isNotBlank() }
+        parseStyleValue(tag, StyleResourceValueImpl(namespace, name, parent, null))
       }
 
       ResourceType.STYLEABLE -> {
         parseDeclareStyleable(
           tag,
-          StyleableResourceValueImpl(getNamespace(), name, null, null)
+          StyleableResourceValueImpl(namespace, name, null, null)
         )
       }
 
       ResourceType.ATTR -> {
-        parseAttrValue(tag, AttrResourceValueImpl(getNamespace(), name, null))
+        parseAttrValue(tag, AttrResourceValueImpl(namespace, name, null))
       }
       ResourceType.ARRAY -> parseArrayValue(
         tag,
-        ArrayResourceValueImpl(getNamespace(), name, null)
+        ArrayResourceValueImpl(namespace, name, null)
       )
       ResourceType.PLURALS -> parsePluralsValue(
         tag,
-        object : PluralsResourceValueImpl(getNamespace(), name, null, null) {
+        object : PluralsResourceValueImpl(namespace, name, null, null) {
           // Allow the user to specify a specific quantity to use via tools:quantity
           override fun getValue(): String {
             val quantity: String? =
@@ -134,9 +139,9 @@ internal class PaparazziResourceItem constructor(
         })
 
       ResourceType.STRING ->
-        parseTextValue(tag, TextResourceValueImpl(getNamespace(), name, null, null, null))
+        parseTextValue(tag, TextResourceValueImpl(namespace, name, null, null, null))
 
-      else -> parseValue(tag, ResourceValueImpl(getNamespace(), type, name, null))
+      else -> parseValue(tag, ResourceValueImpl(namespace, type, name, null))
     }
 
     value.namespaceResolver = getNamespaceResolver(tag)
@@ -174,7 +179,7 @@ internal class PaparazziResourceItem constructor(
       if (name.isNotEmpty()) {
         val url = ResourceUrl.parseAttrReference(name)
         if (url != null) {
-          val resolvedAttr = url.resolve(getNamespace(), getNamespaceResolver(tag))
+          val resolvedAttr = url.resolve(namespace, getNamespaceResolver(tag))
           if (resolvedAttr != null) {
             val attr: AttrResourceValue =
               parseAttrValue(child, AttrResourceValueImpl(resolvedAttr, null))
@@ -295,4 +300,3 @@ internal class PaparazziResourceItem constructor(
     return tag == null
   }
 }
-

@@ -19,7 +19,6 @@ import com.google.common.collect.LinkedListMultimap
 import com.google.common.collect.ListMultimap
 import org.jetbrains.annotations.Contract
 import org.w3c.dom.Document
-import org.w3c.dom.Node
 import java.io.File
 import java.util.EnumMap
 
@@ -94,7 +93,7 @@ internal class ResourceFolderRepository constructor(
         if (root != TAG_RESOURCES) {
           return false
         }
-        val subTags = XmlUtils.getSubTags(document.firstChild)
+        val subTags = XmlUtils.getSubTags(XmlUtils.getFirstSubTagByName(document, TAG_RESOURCES))
         for (tag in subTags) {
           val name: String = tag.getAttribute(ATTR_NAME)
           val type: ResourceType? = ResourceType.fromXmlTag(tag)
@@ -103,7 +102,7 @@ internal class ResourceFolderRepository constructor(
               file = file,
               name = name,
               type = type,
-              namespace = namespace,
+              repository = this,
               tag = tag
             )
             addToResult(item, result)
@@ -125,7 +124,7 @@ internal class ResourceFolderRepository constructor(
                     file = file,
                     name = attrName,
                     type = ATTR,
-                    namespace = namespace,
+                    repository = this,
                     tag = child
                   )
                   addToResult(attrItem, result)
@@ -162,7 +161,7 @@ internal class ResourceFolderRepository constructor(
   ) {
     val type = FolderTypeRelationship.getNonIdRelatedResourceType(folderType)
     val resourceName: String = SdkUtils.fileNameToResourceName(file.name)
-    val item = PaparazziResourceItem(file, resourceName, type, myNamespace, null)
+    val item = PaparazziResourceItem(file, resourceName, type, this, null)
     addToResult(item, result)
   }
 
