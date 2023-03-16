@@ -123,7 +123,8 @@ internal class ResourceFolderRepository constructor(
                 if (isValidValueResourceName(attrName)
                   // Only add attr nodes for elements that specify a format or have flag/enum children; otherwise
                   // it's just a reference to an existing attr.
-                  && (child.getAttribute(ATTR_FORMAT) != null || XmlUtils.getSubTags(child).count() > 0)
+                  && (child.getAttribute(ATTR_FORMAT) != null || XmlUtils.getSubTags(child)
+                    .count() > 0)
                 ) {
                   // Parse attr here
                   val attrItem = PaparazziResourceItem(
@@ -195,9 +196,10 @@ internal class ResourceFolderRepository constructor(
       EnumMap(com.android.resources.ResourceType::class.java)
     if (folderType == ResourceFolderType.VALUES) {
       scanValueFileAsResourceItem(result, file)
-    } else if (FolderTypeRelationship.isIdGeneratingFolderType(folderType)) {
-      addIds(file, result)
     } else {
+      if (FolderTypeRelationship.isIdGeneratingFolderType(folderType)) {
+        addIds(file, result)
+      }
       scanFileResourceFileAsResourceItem(folderType, result, file)
     }
     commitToRepository(result)

@@ -6,6 +6,7 @@ import com.android.ide.common.rendering.api.AttrResourceValue
 import com.android.ide.common.rendering.api.AttributeFormat
 import com.android.ide.common.rendering.api.PluralsResourceValue
 import com.android.ide.common.rendering.api.ResourceNamespace
+import com.android.ide.common.rendering.api.ResourceValue
 import com.android.ide.common.rendering.api.StyleResourceValue
 import com.android.resources.ResourceType
 import org.assertj.core.api.Assertions.assertThat
@@ -141,5 +142,18 @@ class ResourceFolderRepositoryTest {
     assertThat(secondItem.name).isEqualTo("TestAttrInt")
     assertThat(firstItem.formats).isEqualTo(setOf(AttributeFormat.FLOAT))
     assertThat(secondItem.formats).isEqualTo(setOf(AttributeFormat.INTEGER))
+  }
+
+  @Test
+  fun layoutXmlTest() {
+    val repository = ResourceFolderRepository(
+      "src/test/resources/layout/test.xml",
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val firstId = map[0].resourceValue as ResourceValue
+    val secondId = map[1].resourceValue as ResourceValue
+    assertThat(firstId.name).isEqualTo("test_view")
+    assertThat(secondId.name).isEqualTo("test_layout")
   }
 }
