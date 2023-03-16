@@ -1,5 +1,6 @@
 package app.cash.paparazzi.res
 
+import com.android.SdkConstants
 import com.android.SdkConstants.ANDROID_NS_NAME_PREFIX
 import com.android.SdkConstants.ATTR_FORMAT
 import com.android.SdkConstants.ATTR_NAME
@@ -13,12 +14,15 @@ import com.android.resources.FolderTypeRelationship
 import com.android.resources.ResourceFolderType
 import com.android.resources.ResourceType
 import com.android.resources.ResourceType.ATTR
+import com.android.resources.ResourceType.ID
 import com.android.utils.SdkUtils
 import com.android.utils.XmlUtils
+import com.android.utils.forEach
 import com.google.common.collect.LinkedListMultimap
 import com.google.common.collect.ListMultimap
 import org.jetbrains.annotations.Contract
 import org.w3c.dom.Document
+import org.w3c.dom.Element
 import java.io.File
 import java.util.EnumMap
 
@@ -112,9 +116,11 @@ internal class ResourceFolderRepository constructor(
               val attrs = XmlUtils.getSubTags(tag).iterator()
               while (attrs.hasNext()) {
                 val child = attrs.next()
-                val attrName: String = child.getAttribute(ATTR_NAME)
+                var attrName: String = child.getAttribute(ATTR_NAME)
+                if (attrName.startsWith(ANDROID_NS_NAME_PREFIX)) {
+                  attrName = attrName.substring(SdkConstants.ANDROID_NS_NAME_PREFIX_LEN)
+                }
                 if (isValidValueResourceName(attrName)
-                  && !attrName.startsWith(ANDROID_NS_NAME_PREFIX)
                   // Only add attr nodes for elements that specify a format or have flag/enum children; otherwise
                   // it's just a reference to an existing attr.
                   && (child.getAttribute(ATTR_FORMAT) != null || XmlUtils.getSubTags(child).count() > 0)
@@ -138,6 +144,47 @@ internal class ResourceFolderRepository constructor(
     return added
   }
 
+  private fun addIds(
+    file: File,
+    result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+  ) {
+    if (file.extension == "xml") {
+      val reader = XmlUtils.getUtfReader(file)
+      val document: Document? = XmlUtils.parseDocument(reader, true)
+      if (document != null) {
+        addIds(file, document.documentElement, result)
+      }
+    }
+  }
+
+  private fun addIds(
+    file: File,
+    tag: Element,
+    result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
+  ) {
+    val subTags = XmlUtils.getSubTags(tag).iterator()
+    while (subTags.hasNext()) {
+      val subTag = subTags.next()
+      addIds(file, subTag, result)
+    }
+
+    val attributes = tag.attributes
+    attributes.forEach { node ->
+      val attributeValue = node.nodeValue
+      if (attributeValue.startsWith("@+")) {
+        val id: String = attributeValue.substring(attributeValue.indexOf('/') + 1)
+        val idResource = PaparazziResourceItem(
+          file = file,
+          name = id,
+          type = ID,
+          repository = this,
+          tag = tag
+        )
+        addToResult(idResource, result)
+      }
+    }
+  }
+
   private fun getFolderType(file: File): ResourceFolderType {
     return ResourceFolderType.getFolderType(file.parentFile.name)
   }
@@ -148,6 +195,8 @@ internal class ResourceFolderRepository constructor(
       EnumMap(com.android.resources.ResourceType::class.java)
     if (folderType == ResourceFolderType.VALUES) {
       scanValueFileAsResourceItem(result, file)
+    } else if (FolderTypeRelationship.isIdGeneratingFolderType(folderType)) {
+      addIds(file, result)
     } else {
       scanFileResourceFileAsResourceItem(folderType, result, file)
     }
