@@ -19,9 +19,6 @@ package app.cash.paparazzi.internal
 import app.cash.paparazzi.DeviceConfig
 import app.cash.paparazzi.Environment
 import app.cash.paparazzi.Flags
-import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated.FrameworkResources
-import app.cash.paparazzi.deprecated.com.android.io.FolderWrapper
-import app.cash.paparazzi.res.ProjectResourceRepository
 import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.layoutlib.bridge.Bridge
 import com.android.layoutlib.bridge.android.RenderParamsFlags
@@ -42,14 +39,14 @@ internal class Renderer(
   /** Initialize the bridge and the resource maps. */
   fun prepare(): SessionParamsBuilder {
     val platformDataResDir = File("${environment.platformDir}/data/res")
-    val frameworkResources = ProjectResourceRepository.create(
-      localResourceDirs = platformDataResDir.listFiles()!!.map { it.listFiles()?.map { it.absolutePath } ?: emptyList() }.flatten(),
+    val frameworkResources = PaparazziResourceRepository(
+      resources = platformDataResDir.getAllFiles(),
       namespace = ResourceNamespace.ANDROID,
     )
 
-    val projectResources = ProjectResourceRepository.create(
-      localResourceDirs = environment.localeResDirs,
-      libraryResourceDirs = environment.libraryResDirs,
+    val projectResDir = File(environment.resDir)
+    val projectResources = PaparazziResourceRepository(
+      resources = projectResDir.getAllFiles(),
       namespace = ResourceNamespace.TODO()
     )
 
@@ -126,4 +123,6 @@ internal class Renderer(
       DelegateManager.dump(System.out)
     }
   }
+
+  fun File.getAllFiles() = listFiles()!!.map { it.listFiles()?.map { it.absolutePath } ?: emptyList() }.flatten()
 }

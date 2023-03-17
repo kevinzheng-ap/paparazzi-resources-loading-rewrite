@@ -31,8 +31,6 @@ data class Environment(
   val packageName: String,
   val compileSdkVersion: Int,
   val resourcePackageNames: List<String>,
-  val localeResDirs: List<String>,
-  val libraryResDirs: List<String>
 ) {
   init {
     val platformDirPath = Path.of(platformDir)
@@ -66,8 +64,6 @@ fun detectEnvironment(): Environment {
     packageName = configLines[0],
     compileSdkVersion = configLines[2].toInt(),
     resourcePackageNames = configLines[5].split(","),
-    localeResDirs = configLines[6].split(","),
-    libraryResDirs = configLines[7].split(","),
   )
 }
 
