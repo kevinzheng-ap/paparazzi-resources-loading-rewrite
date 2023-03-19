@@ -3,7 +3,6 @@ package app.cash.paparazzi.internal.parsers
 import app.cash.paparazzi.internal.PaparazziResourceItem
 import app.cash.paparazzi.internal.PaparazziResourceRepository
 import com.android.SdkConstants
-import com.android.ide.common.resources.ResourceItem
 import com.android.ide.common.resources.ValueResourceNameValidator
 import com.android.resources.FolderTypeRelationship
 import com.android.resources.ResourceFolderType
@@ -13,13 +12,10 @@ import com.android.resources.ResourceType.ID
 import com.android.utils.SdkUtils
 import com.android.utils.XmlUtils
 import com.android.utils.forEach
-import com.google.common.collect.LinkedListMultimap
-import com.google.common.collect.ListMultimap
 import org.jetbrains.annotations.Contract
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import java.io.File
-import java.util.EnumMap
 
 /**
  * Parse the resource file and commit result to repository
@@ -27,22 +23,18 @@ import java.util.EnumMap
 internal fun parse(resourceFile: String, repository: PaparazziResourceRepository) {
   val file = File(resourceFile)
   val folderType = getFolderType(file)
-  val result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> =
-    EnumMap(ResourceType::class.java)
   if (folderType == ResourceFolderType.VALUES) {
-    parseValueFileAsResourceItem(repository, result, file)
+    parseValueFileAsResourceItem(repository, file)
   } else {
     if (FolderTypeRelationship.isIdGeneratingFolderType(folderType)) {
-      addIds(repository, file, result)
+      addIds(repository, file)
     }
-    parseFileResourceFileAsResourceItem(repository, folderType, result, file)
+    parseFileResourceFileAsResourceItem(repository, folderType, file)
   }
-  repository.addResources(result)
 }
 
 private fun parseValueFileAsResourceItem(
   repository: PaparazziResourceRepository,
-  result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
   file: File,
 ): Boolean {
   var added = false
@@ -71,7 +63,7 @@ private fun parseValueFileAsResourceItem(
             repository = repository,
             tag = tag
           )
-          addToResult(item, result)
+          repository.addResourceItem(item)
           added = true
           if (type === ResourceType.STYLEABLE) {
             // For styleables we also need to create attr items for its children.
@@ -85,10 +77,8 @@ private fun parseValueFileAsResourceItem(
               if (isValidValueResourceName(attrName)
                 // Only add attr nodes for elements that specify a format or have flag/enum children; otherwise
                 // it's just a reference to an existing attr.
-                && (child.getAttribute(SdkConstants.ATTR_FORMAT) != null || XmlUtils.getSubTags(
-                  child
-                )
-                  .count() > 0)
+                && (child.getAttribute(SdkConstants.ATTR_FORMAT) != null ||
+                  XmlUtils.getSubTags(child).count() > 0)
               ) {
                 // Parse attr here
                 val attrItem = PaparazziResourceItem(
@@ -98,7 +88,7 @@ private fun parseValueFileAsResourceItem(
                   repository = repository,
                   tag = child
                 )
-                addToResult(attrItem, result)
+                repository.addResourceItem(attrItem)
               }
             }
           }
@@ -112,13 +102,12 @@ private fun parseValueFileAsResourceItem(
 private fun addIds(
   repository: PaparazziResourceRepository,
   file: File,
-  result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
 ) {
   if (file.extension == "xml") {
     val reader = XmlUtils.getUtfReader(file)
     val document: Document? = XmlUtils.parseDocument(reader, true)
     if (document != null) {
-      addIds(repository, file, document.documentElement, result)
+      addIds(repository, file, document.documentElement)
     }
   }
 }
@@ -127,12 +116,11 @@ private fun addIds(
   repository: PaparazziResourceRepository,
   file: File,
   tag: Element,
-  result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
 ) {
   val subTags = XmlUtils.getSubTags(tag).iterator()
   while (subTags.hasNext()) {
     val subTag = subTags.next()
-    addIds(repository, file, subTag, result)
+    addIds(repository, file, subTag)
   }
 
   val attributes = tag.attributes
@@ -147,7 +135,7 @@ private fun addIds(
         repository = repository,
         tag = tag
       )
-      addToResult(idResource, result)
+      repository.addResourceItem(idResource)
     }
   }
 }
@@ -159,22 +147,12 @@ private fun getFolderType(file: File): ResourceFolderType {
 private fun parseFileResourceFileAsResourceItem(
   repository: PaparazziResourceRepository,
   folderType: ResourceFolderType,
-  result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>,
   file: File
 ) {
   val type = FolderTypeRelationship.getNonIdRelatedResourceType(folderType)
   val resourceName: String = SdkUtils.fileNameToResourceName(file.name)
   val item = PaparazziResourceItem(file, resourceName, type, repository, null)
-  addToResult(item, result)
-}
-
-private fun addToResult(
-  item: ResourceItem,
-  result: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>
-) {
-  // The insertion order matters, see AppResourceRepositoryTest.testStringOrder.
-  result.computeIfAbsent(item.type) { LinkedListMultimap.create() }
-    .put(item.name, item)
+  repository.addResourceItem(item)
 }
 
 @Contract(value = "null -> false")

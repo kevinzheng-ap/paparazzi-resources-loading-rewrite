@@ -56,20 +56,15 @@ internal class PaparazziResourceRepository constructor(
     return resourceTable.get(namespace, resourceType) ?: ImmutableListMultimap.of()
   }
 
-  fun addResources(resources: MutableMap<ResourceType, ListMultimap<String, ResourceItem>>) {
-    resources.keys.forEach { resourceType ->
+  fun addResourceItem(item: ResourceItem) {
+      val resourceType = item.type
       var map: ListMultimap<String, ResourceItem>? = resourceTable.get(namespace, resourceType)
       if (map == null) {
         map = ArrayListMultimap.create()
-        resourceTable.put(namespace, resourceType, map)
+        resourceTable.put(namespace, resourceType, map!!)
       }
 
-      resources[resourceType]?.let {
-        if (!it.isEmpty) {
-          map!!.putAll(it)
-        }
-      }
-    }
+      map.put(item.name, item)
   }
 
   override fun accept(visitor: ResourceVisitor): VisitResult {
