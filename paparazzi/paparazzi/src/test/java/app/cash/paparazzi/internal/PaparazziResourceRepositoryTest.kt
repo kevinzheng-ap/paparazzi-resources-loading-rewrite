@@ -20,10 +20,10 @@ class PaparazziResourceRepositoryTest {
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
-    assertThat(map[0].name).isEqualTo("test_color")
-    assertThat(map[0].resourceValue.value).isEqualTo("#ffffffff")
-    assertThat(map[1].name).isEqualTo("test_color_2")
-    assertThat(map[1].resourceValue.value).isEqualTo("#00000000")
+    assertThat(map[0].name).isEqualTo("test_color_2")
+    assertThat(map[0].resourceValue.value).isEqualTo("#00000000")
+    assertThat(map[1].name).isEqualTo("test_color")
+    assertThat(map[1].resourceValue.value).isEqualTo("#ffffffff")
   }
 
   @Test
@@ -59,9 +59,9 @@ class PaparazziResourceRepositoryTest {
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
-    assertThat(map[0].name).isEqualTo("button_ok")
+    assertThat(map[0].name).isEqualTo("dialog_exit")
     assertThat(map[0].type).isEqualTo(ResourceType.ID)
-    assertThat(map[1].name).isEqualTo("dialog_exit")
+    assertThat(map[1].name).isEqualTo("button_ok")
     assertThat(map[1].type).isEqualTo(ResourceType.ID)
   }
 
@@ -137,10 +137,10 @@ class PaparazziResourceRepositoryTest {
     val secondItem = map[1].resourceValue as AttrResourceValue
     val styleable = map[2]
     assertThat(styleable.name).isEqualTo("test_styleable")
-    assertThat(firstItem.name).isEqualTo("TestAttr")
-    assertThat(secondItem.name).isEqualTo("TestAttrInt")
-    assertThat(firstItem.formats).isEqualTo(setOf(AttributeFormat.FLOAT))
-    assertThat(secondItem.formats).isEqualTo(setOf(AttributeFormat.INTEGER))
+    assertThat(firstItem.name).isEqualTo("TestAttrInt")
+    assertThat(secondItem.name).isEqualTo("TestAttr")
+    assertThat(firstItem.formats).isEqualTo(setOf(AttributeFormat.INTEGER))
+    assertThat(secondItem.formats).isEqualTo(setOf(AttributeFormat.FLOAT))
   }
 
   @Test
