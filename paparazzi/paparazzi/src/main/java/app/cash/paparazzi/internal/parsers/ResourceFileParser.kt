@@ -2,6 +2,7 @@ package app.cash.paparazzi.internal.parsers
 
 import app.cash.paparazzi.internal.PaparazziResourceItem
 import app.cash.paparazzi.internal.PaparazziResourceRepository
+import app.cash.paparazzi.internal.pseudolocale.PaparazziPseudoResourceItem
 import com.android.SdkConstants
 import com.android.ide.common.resources.ValueResourceNameValidator
 import com.android.resources.FolderTypeRelationship
@@ -64,6 +65,16 @@ private fun parseValueFileAsResourceItem(
             tag = tag
           )
           repository.addResourceItem(item)
+          if (type == ResourceType.STRING && item.configuration.localeQualifier == null) {
+            val pseudoString = PaparazziPseudoResourceItem(
+              file = file,
+              name = name,
+              type = type,
+              repository = repository,
+              tag = tag
+            )
+            repository.addResourceItem(pseudoString)
+          }
           added = true
           if (type === ResourceType.STYLEABLE) {
             // For styleables we also need to create attr items for its children.

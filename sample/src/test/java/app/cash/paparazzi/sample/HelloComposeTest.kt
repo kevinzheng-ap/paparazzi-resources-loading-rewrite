@@ -15,13 +15,17 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import app.cash.paparazzi.DeviceConfig
+import app.cash.paparazzi.DeviceConfig.Companion
 import app.cash.paparazzi.Paparazzi
 import org.junit.Rule
 import org.junit.Test
 
 class HelloComposeTest {
   @get:Rule
-  val paparazzi = Paparazzi()
+  val paparazzi = Paparazzi(
+    deviceConfig = DeviceConfig.NEXUS_5.copy(locale = "en-rXA")
+  )
 
   @Test
   fun compose() {
