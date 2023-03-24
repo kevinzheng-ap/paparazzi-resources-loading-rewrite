@@ -80,6 +80,29 @@ class PaparazziPlugin : Plugin<Project> {
     variants.all { variant ->
       val variantSlug = variant.name.capitalize(Locale.US)
       val testVariant = variant.unitTestVariant ?: return@all
+
+      // local resources
+      val resDirs = project
+        .files(variant.sourceSets.flatMap { it.resDirectories })
+        .asFileTree
+        .files
+
+      // external resources
+      // https://android.googlesource.com/platform/tools/base/+/96015063acd3455a76cdf1cc71b23b0828c0907f/build-system/gradle-core/src/main/java/com/android/build/gradle/tasks/MergeResources.kt#875
+      val runtimeResources = variant.runtimeConfiguration
+        .incoming
+        .artifactView { config: ArtifactView.ViewConfiguration ->
+          config.attributes { container: AttributeContainer ->
+            container.attribute(
+              AndroidArtifacts.ARTIFACT_TYPE,
+              AndroidArtifacts.ArtifactType.ANDROID_RES.type
+            )
+          }
+        }
+        .artifacts
+        .artifactFiles
+        .asFileTree
+
       val mergeResourcesOutputDir = variant.mergeResourcesProvider.flatMap { it.outputDir }
       val mergeAssetsProvider =
         project.tasks.named("merge${variantSlug}Assets") as TaskProvider<MergeSourceSetFolders>
@@ -110,6 +133,8 @@ class PaparazziPlugin : Plugin<Project> {
         task.targetSdkVersion.set(android.targetSdkVersion())
         task.compileSdkVersion.set(android.compileSdkVersion())
         task.mergeAssetsOutput.set(mergeAssetsOutputDir)
+        task.localResDirs.set(resDirs.joinToString(","))
+        task.libraryResDirs.set(runtimeResources.files.joinToString(","))
         task.paparazziResources.set(project.layout.buildDirectory.file("intermediates/paparazzi/${variant.name}/resources.txt"))
       }
 
@@ -271,3 +296,4 @@ class PaparazziPlugin : Plugin<Project> {
 //  acceptable as the minimum supported version
 private val ARTIFACT_TYPE_ATTRIBUTE = Attribute.of("artifactType", String::class.java)
 private const val DEFAULT_COMPILE_SDK_VERSION = 33
+

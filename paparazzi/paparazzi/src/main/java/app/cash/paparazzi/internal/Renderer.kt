@@ -46,7 +46,7 @@ internal class Renderer(
 
     val projectResDir = File(environment.resDir)
     val projectResources = PaparazziResourceRepository(
-      resources = projectResDir.getAllFiles(),
+      resources = environment.localeResDirs + environment.libraryResDirs,
       namespace = ResourceNamespace.TODO()
     )
 
