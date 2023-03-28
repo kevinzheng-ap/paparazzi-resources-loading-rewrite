@@ -44,6 +44,8 @@ internal class PaparazziResourceItem constructor(
   private val repository: SingleNamespaceResourceRepository,
   private val tag: Element?
 ) : ResourceItem {
+  private val resourceValue: ResourceValue
+
   private val folderConfiguration: FolderConfiguration =
     FolderConfiguration.getConfigForFolder(file.parentFile.name)
 
@@ -81,8 +83,8 @@ internal class PaparazziResourceItem constructor(
     } else type.getName() + '/' + name
   }
 
-  override fun getResourceValue(): ResourceValue {
-    return if (tag == null || type == PUBLIC) {
+  init {
+    resourceValue = if (tag == null || type == PUBLIC) {
       val density =
         if (type == ResourceType.DRAWABLE || type == ResourceType.MIPMAP) configuration.densityQualifier?.value else null
       val path = file.absolutePath
@@ -94,6 +96,10 @@ internal class PaparazziResourceItem constructor(
     } else {
       parseXmlToResourceValueSafe(tag)
     }
+  }
+
+  override fun getResourceValue(): ResourceValue {
+    return resourceValue
   }
 
   private fun parseXmlToResourceValueSafe(tag: Element): ResourceValue {

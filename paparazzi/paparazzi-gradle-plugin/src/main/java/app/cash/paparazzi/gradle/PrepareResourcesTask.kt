@@ -17,6 +17,7 @@ package app.cash.paparazzi.gradle
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -45,11 +46,13 @@ abstract class PrepareResourcesTask : DefaultTask() {
   @get:Input
   abstract val compileSdkVersion: Property<String>
 
-  @get:Input
-  abstract val localResDirs: Property<String>
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.NONE)
+  abstract val localResDirs: ConfigurableFileTree
 
-  @get:Input
-  abstract val libraryResDirs: Property<String>
+  // @get:InputFiles
+  // @get:PathSensitive(PathSensitivity.NONE)
+  // abstract val libraryResDirs: ConfigurableFileCollection
 
   @get:InputDirectory
   @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -102,9 +105,9 @@ abstract class PrepareResourcesTask : DefaultTask() {
         it.newLine()
         it.write(resourcePackageNames)
         it.newLine()
-        it.write(localResDirs.get())
+        it.write(localResDirs.files.joinToString(","))
         it.newLine()
-        it.write(libraryResDirs.get())
+        // it.write(libraryResDirs.files.joinToString(","))
         it.newLine()
       }
   }

@@ -81,28 +81,6 @@ class PaparazziPlugin : Plugin<Project> {
       val variantSlug = variant.name.capitalize(Locale.US)
       val testVariant = variant.unitTestVariant ?: return@all
 
-      // local resources
-      val resDirs = project
-        .files(variant.sourceSets.flatMap { it.resDirectories })
-        .asFileTree
-        .files
-
-      // external resources
-      // https://android.googlesource.com/platform/tools/base/+/96015063acd3455a76cdf1cc71b23b0828c0907f/build-system/gradle-core/src/main/java/com/android/build/gradle/tasks/MergeResources.kt#875
-      val runtimeResources = variant.runtimeConfiguration
-        .incoming
-        .artifactView { config: ArtifactView.ViewConfiguration ->
-          config.attributes { container: AttributeContainer ->
-            container.attribute(
-              AndroidArtifacts.ARTIFACT_TYPE,
-              AndroidArtifacts.ArtifactType.ANDROID_RES.type
-            )
-          }
-        }
-        .artifacts
-        .artifactFiles
-        .asFileTree
-
       val mergeResourcesOutputDir = variant.mergeResourcesProvider.flatMap { it.outputDir }
       val mergeAssetsProvider =
         project.tasks.named("merge${variantSlug}Assets") as TaskProvider<MergeSourceSetFolders>
@@ -126,6 +104,27 @@ class PaparazziPlugin : Plugin<Project> {
         val nonTransitiveRClassEnabled =
           (project.findProperty("android.nonTransitiveRClass") as? String).toBoolean()
 
+        // local resources
+        val resDirs = project
+          .files(variant.sourceSets.flatMap { it.resDirectories })
+          .asFileTree
+
+
+        // external resources
+        // https://android.googlesource.com/platform/tools/base/+/96015063acd3455a76cdf1cc71b23b0828c0907f/build-system/gradle-core/src/main/java/com/android/build/gradle/tasks/MergeResources.kt#875
+        // val runtimeResources = variant.runtimeConfiguration
+        //   .incoming
+        //   .artifactView { config: ArtifactView.ViewConfiguration ->
+        //     config.attributes { container: AttributeContainer ->
+        //       container.attribute(
+        //         AndroidArtifacts.ARTIFACT_TYPE,
+        //         AndroidArtifacts.ArtifactType.ANDROID_RES.type
+        //       )
+        //     }
+        //   }
+        //   .artifacts
+        //   .artifactFiles
+
         task.packageName.set(android.packageName())
         task.artifactFiles.from(packageAwareArtifacts.artifactFiles)
         task.nonTransitiveRClassEnabled.set(nonTransitiveRClassEnabled)
@@ -133,16 +132,15 @@ class PaparazziPlugin : Plugin<Project> {
         task.targetSdkVersion.set(android.targetSdkVersion())
         task.compileSdkVersion.set(android.compileSdkVersion())
         task.mergeAssetsOutput.set(mergeAssetsOutputDir)
-        task.localResDirs.set(resDirs.joinToString(","))
-        task.libraryResDirs.set(runtimeResources.files.joinToString(","))
+        task.localResDirs.from(project.fileTree(resDirs))
+        // task.libraryResDirs.from(runtimeResources)
         task.paparazziResources.set(project.layout.buildDirectory.file("intermediates/paparazzi/${variant.name}/resources.txt"))
       }
 
       val testVariantSlug = testVariant.name.capitalize(Locale.US)
 
       project.plugins.withType(JavaBasePlugin::class.java) {
-        project.tasks.named("compile${testVariantSlug}JavaWithJavac")
-          .configure { it.dependsOn(writeResourcesTask) }
+        writeResourcesTask.configure { it.dependsOn(project.tasks.named("compile${testVariantSlug}JavaWithJavac")) }
       }
 
       project.plugins.withType(KotlinMultiplatformPluginWrapper::class.java) {
@@ -151,22 +149,22 @@ class PaparazziPlugin : Plugin<Project> {
         check(multiplatformExtension.targets.any { target -> target is KotlinAndroidTarget }) {
           "There must be an Android target configured when using Paparazzi with the Kotlin Multiplatform Plugin"
         }
-        project.tasks.named("compile${testVariantSlug}KotlinAndroid")
-          .configure { it.dependsOn(writeResourcesTask) }
+        writeResourcesTask.configure { it.dependsOn(project.tasks.named("compile${testVariantSlug}KotlinAndroid")) }
       }
 
       project.plugins.withType(KotlinAndroidPluginWrapper::class.java) {
-        project.tasks.named("compile${testVariantSlug}Kotlin")
-          .configure { it.dependsOn(writeResourcesTask) }
+        writeResourcesTask.configure { it.dependsOn(project.tasks.named("compile${testVariantSlug}Kotlin")) }
       }
 
-      val recordTaskProvider = project.tasks.register("recordPaparazzi$variantSlug", PaparazziTask::class.java) {
-        it.group = VERIFICATION_GROUP
-      }
+      val recordTaskProvider =
+        project.tasks.register("recordPaparazzi$variantSlug", PaparazziTask::class.java) {
+          it.group = VERIFICATION_GROUP
+        }
       recordVariants.configure { it.dependsOn(recordTaskProvider) }
-      val verifyTaskProvider = project.tasks.register("verifyPaparazzi$variantSlug", PaparazziTask::class.java) {
-        it.group = VERIFICATION_GROUP
-      }
+      val verifyTaskProvider =
+        project.tasks.register("verifyPaparazzi$variantSlug", PaparazziTask::class.java) {
+          it.group = VERIFICATION_GROUP
+        }
       verifyVariants.configure { it.dependsOn(verifyTaskProvider) }
 
       val isRecordRun = project.objects.property(Boolean::class.java)
@@ -192,7 +190,8 @@ class PaparazziPlugin : Plugin<Project> {
         test.outputs.dir(reportOutputDir)
         test.outputs.dir(snapshotOutputDir)
 
-        val paparazziProperties = project.properties.filterKeys { it.startsWith("app.cash.paparazzi") }
+        val paparazziProperties =
+          project.properties.filterKeys { it.startsWith("app.cash.paparazzi") }
 
         @Suppress("ObjectLiteralToLambda")
         // why not a lambda?  See: https://docs.gradle.org/7.2/userguide/validation_problems.html#implementation_unknown
@@ -206,6 +205,8 @@ class PaparazziPlugin : Plugin<Project> {
           }
         })
       }
+
+      testTaskProvider.configure { it.dependsOn(writeResourcesTask) }
 
       recordTaskProvider.configure { it.dependsOn(testTaskProvider) }
       verifyTaskProvider.configure { it.dependsOn(testTaskProvider) }
@@ -224,7 +225,10 @@ class PaparazziPlugin : Plugin<Project> {
   }
 
   open class PaparazziTask : DefaultTask() {
-    @Option(option = "tests", description = "Sets test class or method name to be included, '*' is supported.")
+    @Option(
+      option = "tests",
+      description = "Sets test class or method name to be included, '*' is supported."
+    )
     open fun setTestNameIncludePatterns(testNamePattern: List<String>): PaparazziTask {
       project.tasks.withType(Test::class.java).configureEach {
         it.setTestNameIncludePatterns(testNamePattern)
@@ -243,6 +247,7 @@ class PaparazziPlugin : Plugin<Project> {
         val osArch = System.getProperty("os.arch").lowercase(Locale.US)
         if (osArch.startsWith("x86")) "macosx" else "macarm"
       }
+
       operatingSystem.isWindows -> "win"
       else -> "linux"
     }
