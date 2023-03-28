@@ -25,7 +25,7 @@ internal class PaparazziResourceRepository constructor(
   private val resourceTable: ResourceTable = ResourceTable()
 
   init {
-    resources.forEach { parse(it, this) }
+    resources.filter { it.isNotBlank() }.forEach { parse(it, this) }
   }
 
   override fun getPublicResources(
