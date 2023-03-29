@@ -28,8 +28,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.ArtifactView
-import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
@@ -109,21 +107,20 @@ class PaparazziPlugin : Plugin<Project> {
           .files(variant.sourceSets.flatMap { it.resDirectories })
           .asFileTree
 
-
         // external resources
         // https://android.googlesource.com/platform/tools/base/+/96015063acd3455a76cdf1cc71b23b0828c0907f/build-system/gradle-core/src/main/java/com/android/build/gradle/tasks/MergeResources.kt#875
-        // val runtimeResources = variant.runtimeConfiguration
-        //   .incoming
-        //   .artifactView { config: ArtifactView.ViewConfiguration ->
-        //     config.attributes { container: AttributeContainer ->
-        //       container.attribute(
-        //         AndroidArtifacts.ARTIFACT_TYPE,
-        //         AndroidArtifacts.ArtifactType.ANDROID_RES.type
-        //       )
-        //     }
-        //   }
-        //   .artifacts
-        //   .artifactFiles
+        val runtimeResources = variant.runtimeConfiguration
+          .incoming
+          .artifactView { config: ArtifactView.ViewConfiguration ->
+            config.attributes { container: AttributeContainer ->
+              container.attribute(
+                AndroidArtifacts.ARTIFACT_TYPE,
+                AndroidArtifacts.ArtifactType.ANDROID_RES.type
+              )
+            }
+          }
+          .artifacts
+          .artifactFiles
 
         task.packageName.set(android.packageName())
         task.artifactFiles.from(packageAwareArtifacts.artifactFiles)
@@ -132,8 +129,8 @@ class PaparazziPlugin : Plugin<Project> {
         task.targetSdkVersion.set(android.targetSdkVersion())
         task.compileSdkVersion.set(android.compileSdkVersion())
         task.mergeAssetsOutput.set(mergeAssetsOutputDir)
-        task.localResDirs.from(project.fileTree(resDirs))
-        // task.libraryResDirs.from(runtimeResources)
+        task.localResourceFiles.from(resDirs)
+        task.libraryResDirs.from(runtimeResources)
         task.paparazziResources.set(project.layout.buildDirectory.file("intermediates/paparazzi/${variant.name}/resources.txt"))
       }
 

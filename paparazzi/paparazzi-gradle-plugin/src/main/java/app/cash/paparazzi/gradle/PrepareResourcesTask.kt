@@ -30,6 +30,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import java.io.File
 
 @CacheableTask
 abstract class PrepareResourcesTask : DefaultTask() {
@@ -48,11 +49,11 @@ abstract class PrepareResourcesTask : DefaultTask() {
 
   @get:InputFiles
   @get:PathSensitive(PathSensitivity.NONE)
-  abstract val localResDirs: ConfigurableFileTree
+  abstract val localResourceFiles: ConfigurableFileCollection
 
-  // @get:InputFiles
-  // @get:PathSensitive(PathSensitivity.NONE)
-  // abstract val libraryResDirs: ConfigurableFileCollection
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.NONE)
+  abstract val libraryResDirs: ConfigurableFileCollection
 
   @get:InputDirectory
   @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -68,7 +69,8 @@ abstract class PrepareResourcesTask : DefaultTask() {
   @get:OutputFile
   abstract val paparazziResources: RegularFileProperty
 
-  private val buildDirectory = project.layout.buildDirectory
+  private val projectDirectory = project.layout.projectDirectory
+  private val buildDirectoryProperty = project.layout.buildDirectory
 
   @TaskAction
   // TODO: figure out why this can't be removed as of Kotlin 1.6+
@@ -88,31 +90,35 @@ abstract class PrepareResourcesTask : DefaultTask() {
     } else {
       mainPackage
     }
-    val projectDirectory = buildDirectory.get()
+    val buildDirectory = buildDirectoryProperty.get()
 
     out.bufferedWriter()
       .use {
         it.write(mainPackage)
         it.newLine()
-        it.write(projectDirectory.relativize(mergeResourcesOutput.get()))
+        it.write(buildDirectory.relativize(mergeResourcesOutput.get().asFile))
         it.newLine()
         it.write(targetSdkVersion.get())
         it.newLine()
         // Use compileSdkVersion for system framework resources.
         it.write("platforms/android-${compileSdkVersion.get()}/")
         it.newLine()
-        it.write(projectDirectory.relativize(mergeAssetsOutput.get()))
+        it.write(buildDirectory.relativize(mergeAssetsOutput.get().asFile))
         it.newLine()
         it.write(resourcePackageNames)
         it.newLine()
-        it.write(localResDirs.files.joinToString(","))
+        it.write(localResourceFiles.files.joinToString(",") { file ->
+          projectDirectory.relativize(file)
+        })
         it.newLine()
-        // it.write(libraryResDirs.files.joinToString(","))
+        it.write(libraryResDirs.files.joinToString(",") { file ->
+          projectDirectory.relativize(file)
+        })
         it.newLine()
       }
   }
 
-  private fun Directory.relativize(child: Directory): String {
-    return asFile.toPath().relativize(child.asFile.toPath()).toFile().invariantSeparatorsPath
+  private fun Directory.relativize(child: File): String {
+    return asFile.toPath().relativize(child.toPath()).toFile().invariantSeparatorsPath
   }
 }
