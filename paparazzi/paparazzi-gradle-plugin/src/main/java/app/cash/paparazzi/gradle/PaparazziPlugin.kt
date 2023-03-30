@@ -121,6 +121,7 @@ class PaparazziPlugin : Plugin<Project> {
           }
           .artifacts
           .artifactFiles
+          .asFileTree
 
         task.packageName.set(android.packageName())
         task.artifactFiles.from(packageAwareArtifacts.artifactFiles)
