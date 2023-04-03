@@ -46,7 +46,7 @@ open class PaparazziResourceItem constructor(
 ) : ResourceItem {
   private val resourceValue: ResourceValue
 
-  private val folderConfiguration: FolderConfiguration =
+  open val folderConfiguration: FolderConfiguration =
     FolderConfiguration.getConfigForFolder(file.parentFile.name)
 
   override fun getConfiguration(): FolderConfiguration {

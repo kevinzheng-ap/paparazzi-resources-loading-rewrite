@@ -75,7 +75,7 @@ data class DeviceConfig(
   val density: Density = Density.XHIGH,
   val fontScale: Float = 1f,
   val layoutDirection: LayoutDirection = LayoutDirection.LTR,
-  var locale: String? = null,
+  val locale: String? = null,
   val ratio: ScreenRatio = ScreenRatio.NOTLONG,
   val size: ScreenSize = ScreenSize.NORMAL,
   val keyboard: Keyboard = Keyboard.NOKEY,
@@ -85,14 +85,8 @@ data class DeviceConfig(
   val navigation: Navigation = Navigation.NONAV,
   val screenRound: com.android.resources.ScreenRound? = null,
   val released: String = "November 13, 2012",
-  val pseudoLocalEnabled: Boolean = false
+  val pseudoLocalEnabled: Boolean = true
 ) {
-  init {
-    if (pseudoLocalEnabled) {
-      locale = PSEUDO_LOCALE
-    }
-  }
-
   val folderConfiguration: FolderConfiguration
     get() = FolderConfiguration.createDefault()
       .apply {
@@ -115,7 +109,8 @@ data class DeviceConfig(
         countryCodeQualifier = CountryCodeQualifier()
         layoutDirectionQualifier = LayoutDirectionQualifier(layoutDirection)
         networkCodeQualifier = NetworkCodeQualifier()
-        localeQualifier = if (locale != null) LocaleQualifier.getQualifier(locale) else LocaleQualifier(LocaleQualifier.FAKE_VALUE)
+        val internalLocale = if (pseudoLocalEnabled) PSEUDO_LOCALE else locale
+        localeQualifier = if (internalLocale != null) LocaleQualifier.getQualifier(internalLocale) else LocaleQualifier(LocaleQualifier.FAKE_VALUE)
         versionQualifier = VersionQualifier()
       }
 
