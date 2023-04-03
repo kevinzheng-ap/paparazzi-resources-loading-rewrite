@@ -17,14 +17,11 @@ package app.cash.paparazzi.gradle
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.Directory
-import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -37,9 +34,8 @@ abstract class PrepareResourcesTask : DefaultTask() {
   @get:Input
   abstract val packageName: Property<String>
 
-  @get:InputDirectory
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val mergeResourcesOutput: DirectoryProperty
+  @get:Input
+  abstract val mergeResourcesOutputDir: Property<String>
 
   @get:Input
   abstract val targetSdkVersion: Property<String>
@@ -55,9 +51,8 @@ abstract class PrepareResourcesTask : DefaultTask() {
   @get:PathSensitive(PathSensitivity.NONE)
   abstract val libraryResDirs: ConfigurableFileCollection
 
-  @get:InputDirectory
-  @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val mergeAssetsOutput: DirectoryProperty
+  @get:Input
+  abstract val mergeAssetsOutputDir: Property<String>
 
   @get:Input
   abstract val nonTransitiveRClassEnabled: Property<Boolean>
@@ -90,20 +85,21 @@ abstract class PrepareResourcesTask : DefaultTask() {
     } else {
       mainPackage
     }
+
     val buildDirectory = buildDirectoryProperty.get()
 
     out.bufferedWriter()
       .use {
         it.write(mainPackage)
         it.newLine()
-        it.write(buildDirectory.relativize(mergeResourcesOutput.get().asFile))
+        it.write(mergeResourcesOutputDir.get())
         it.newLine()
         it.write(targetSdkVersion.get())
         it.newLine()
         // Use compileSdkVersion for system framework resources.
         it.write("platforms/android-${compileSdkVersion.get()}/")
         it.newLine()
-        it.write(buildDirectory.relativize(mergeAssetsOutput.get().asFile))
+        it.write(mergeAssetsOutputDir.get())
         it.newLine()
         it.write(resourcePackageNames)
         it.newLine()
