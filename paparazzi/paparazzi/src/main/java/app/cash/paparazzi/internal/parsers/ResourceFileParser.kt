@@ -77,7 +77,7 @@ private fun parseValueFileAsResourceItem(
               if (isValidValueResourceName(attrName)
                 // Only add attr nodes for elements that specify a format or have flag/enum children; otherwise
                 // it's just a reference to an existing attr.
-                && (child.getAttribute(SdkConstants.ATTR_FORMAT) != null ||
+                && (child.getAttribute(SdkConstants.ATTR_FORMAT).isNotBlank() ||
                   XmlUtils.getSubTags(child).count() > 0)
               ) {
                 // Parse attr here
