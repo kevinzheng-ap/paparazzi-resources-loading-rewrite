@@ -4,6 +4,7 @@ import app.cash.paparazzi.internal.PaparazziResourceItem
 import app.cash.paparazzi.internal.PaparazziResourceRepository
 import app.cash.paparazzi.internal.pseudolocale.PaparazziPseudoResourceItem
 import com.android.SdkConstants
+import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.resources.ValueResourceNameValidator
 import com.android.resources.FolderTypeRelationship
 import com.android.resources.ResourceFolderType
@@ -17,6 +18,8 @@ import org.jetbrains.annotations.Contract
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import java.io.File
+
+private const val DO_NOT_TRANSLATE = "donottranslate"
 
 /**
  * Parse the resource file and commit result to repository
@@ -65,7 +68,11 @@ private fun parseValueFileAsResourceItem(
             tag = tag
           )
           repository.addResourceItem(item)
-          if (type == ResourceType.STRING && item.configuration.localeQualifier == null) {
+          if (type == ResourceType.STRING &&
+            item.configuration.localeQualifier == null &&
+            !file.name.contains(DO_NOT_TRANSLATE) &&
+            tag.getAttribute(SdkConstants.ATTR_TRANSLATABLE).toBooleanStrictOrNull() != false
+          ) {
             val pseudoString = PaparazziPseudoResourceItem(
               file = file,
               name = name,

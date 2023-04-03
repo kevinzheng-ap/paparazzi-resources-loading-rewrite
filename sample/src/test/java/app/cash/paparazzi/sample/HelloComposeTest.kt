@@ -25,14 +25,13 @@ class HelloComposeTest {
 
   @Test
   fun compose() {
-    paparazzi.snapshot { HelloPaparazzi() }
+    paparazzi.snapshot { HelloPaparazzi(stringResource(id = R.string.hello)) }
   }
 }
 
 @Suppress("TestFunctionName")
 @Composable
-fun HelloPaparazzi() {
-  val text = stringResource(id = R.string.hello)
+fun HelloPaparazzi(text: String) {
   Column(
     Modifier
       .background(Color.White)
