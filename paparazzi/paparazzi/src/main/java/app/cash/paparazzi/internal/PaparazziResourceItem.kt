@@ -37,7 +37,7 @@ import org.w3c.dom.Element
 import java.io.File
 import java.util.EnumSet
 
-internal class PaparazziResourceItem constructor(
+open class PaparazziResourceItem constructor(
   private val file: File,
   private val name: String,
   private val type: ResourceType,
@@ -46,7 +46,7 @@ internal class PaparazziResourceItem constructor(
 ) : ResourceItem {
   private val resourceValue: ResourceValue
 
-  private val folderConfiguration: FolderConfiguration =
+  open val folderConfiguration: FolderConfiguration =
     FolderConfiguration.getConfigForFolder(file.parentFile.name)
 
   override fun getConfiguration(): FolderConfiguration {
@@ -282,8 +282,7 @@ internal class PaparazziResourceItem constructor(
   /**
    * Returns the text content of a given tag
    */
-  private fun getTextContent(tag: Element): String {
-    // TODO
+  open fun getTextContent(tag: Element): String {
     return tag.textContent
   }
 

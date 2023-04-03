@@ -56,6 +56,8 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.util.Properties
 
+private const val PSEUDO_LOCALE = "en-rXA"
+
 /**
  * Provides [FolderConfiguration] and [HardwareConfig] for various devices. Also provides utility
  * methods to parse `build.prop` and `attrs.xml` to generate the appropriate maps.
@@ -82,7 +84,8 @@ data class DeviceConfig(
   val softButtons: Boolean = true,
   val navigation: Navigation = Navigation.NONAV,
   val screenRound: com.android.resources.ScreenRound? = null,
-  val released: String = "November 13, 2012"
+  val released: String = "November 13, 2012",
+  val pseudoLocalEnabled: Boolean = true
 ) {
   val folderConfiguration: FolderConfiguration
     get() = FolderConfiguration.createDefault()
@@ -106,7 +109,8 @@ data class DeviceConfig(
         countryCodeQualifier = CountryCodeQualifier()
         layoutDirectionQualifier = LayoutDirectionQualifier(layoutDirection)
         networkCodeQualifier = NetworkCodeQualifier()
-        localeQualifier = if (locale != null) LocaleQualifier.getQualifier(locale) else LocaleQualifier(LocaleQualifier.FAKE_VALUE)
+        val internalLocale = if (pseudoLocalEnabled) PSEUDO_LOCALE else locale
+        localeQualifier = if (internalLocale != null) LocaleQualifier.getQualifier(internalLocale) else LocaleQualifier(LocaleQualifier.FAKE_VALUE)
         versionQualifier = VersionQualifier()
       }
 
