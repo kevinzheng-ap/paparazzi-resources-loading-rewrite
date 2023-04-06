@@ -26,7 +26,6 @@ import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated
 import app.cash.paparazzi.deprecated.com.android.io.FolderWrapper
 import app.cash.paparazzi.getFieldReflectively
 import app.cash.paparazzi.setStaticValue
-import app.cash.paparazzi.res.ProjectResourceRepository
 import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.layoutlib.bridge.Bridge
 import com.android.layoutlib.bridge.android.RenderParamsFlags
@@ -66,15 +65,14 @@ internal class Renderer(
           )
       } else {
         ResourceRepositoryBridge.New(
-          ProjectResourceRepository.create(
-            localResourceDirs = platformDataResDir.listFiles()!!.map { it.listFiles()?.map { it.absolutePath } ?: emptyList() }.flatten(),
+          PaparazziResourceRepository(
+            resources = platformDataResDir.getAllFiles(),
             namespace = ResourceNamespace.ANDROID,
           )
         ) to
           ResourceRepositoryBridge.New(
-            ProjectResourceRepository.create(
-              localResourceDirs = environment.localeResDirs,
-              libraryResourceDirs = environment.libraryResDirs,
+            PaparazziResourceRepository(
+              resources = File(environment.resDir).getAllFiles(),
               namespace = ResourceNamespace.TODO()
             )
           )
@@ -150,7 +148,8 @@ internal class Renderer(
     }
 
     buildClass.classes.forEach { inner ->
-      val originalInnerClass = originalBuildClass.classes.single { it.simpleName == inner.simpleName }
+      val originalInnerClass =
+        originalBuildClass.classes.single { it.simpleName == inner.simpleName }
       inner.fields.forEach {
         val originalField = originalInnerClass.getField(it.name)
         inner.getFieldReflectively(it.name).setStaticValue(originalField.get(null))
@@ -186,4 +185,7 @@ internal class Renderer(
       DelegateManager.dump(System.out)
     }
   }
+
+  fun File.getAllFiles() =
+    listFiles()!!.map { it.listFiles()?.map { it.absolutePath } ?: emptyList() }.flatten()
 }

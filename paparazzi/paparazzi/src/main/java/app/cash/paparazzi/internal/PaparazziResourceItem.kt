@@ -1,4 +1,4 @@
-package app.cash.paparazzi.res
+package app.cash.paparazzi.internal
 
 import com.android.SdkConstants.ATTR_FORMAT
 import com.android.SdkConstants.ATTR_NAME
@@ -41,7 +41,7 @@ internal class PaparazziResourceItem constructor(
   private val file: File,
   private val name: String,
   private val type: ResourceType,
-  private val repository: ResourceFolderRepository,
+  private val repository: SingleNamespaceResourceRepository,
   private val tag: Element?
 ) : ResourceItem {
   private val folderConfiguration: FolderConfiguration =

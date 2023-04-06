@@ -1,6 +1,5 @@
-package app.cash.paparazzi
+package app.cash.paparazzi.internal
 
-import app.cash.paparazzi.res.ResourceFolderRepository
 import com.android.ide.common.rendering.api.ArrayResourceValue
 import com.android.ide.common.rendering.api.AttrResourceValue
 import com.android.ide.common.rendering.api.AttributeFormat
@@ -12,12 +11,12 @@ import com.android.resources.ResourceType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
 
-class ResourceFolderRepositoryTest {
+class PaparazziResourceRepositoryTest {
 
   @Test
   fun colorsXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/values/colors.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/values/colors.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
@@ -29,8 +28,8 @@ class ResourceFolderRepositoryTest {
 
   @Test
   fun boolsXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/values/bools.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/values/bools.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
@@ -42,8 +41,8 @@ class ResourceFolderRepositoryTest {
 
   @Test
   fun dimensXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/values/dimens.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/values/dimens.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
@@ -55,8 +54,8 @@ class ResourceFolderRepositoryTest {
 
   @Test
   fun idsXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/values/ids.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/values/ids.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
@@ -68,8 +67,8 @@ class ResourceFolderRepositoryTest {
 
   @Test
   fun integersXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/values/integers.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/values/integers.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
@@ -81,8 +80,8 @@ class ResourceFolderRepositoryTest {
 
   @Test
   fun stringsXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/values/strings.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/values/strings.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
@@ -110,8 +109,8 @@ class ResourceFolderRepositoryTest {
 
   @Test
   fun styleXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/values/style.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/values/style.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
@@ -129,8 +128,8 @@ class ResourceFolderRepositoryTest {
 
   @Test
   fun attrsXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/values/attrs.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/values/attrs.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
@@ -146,8 +145,8 @@ class ResourceFolderRepositoryTest {
 
   @Test
   fun layoutXmlTest() {
-    val repository = ResourceFolderRepository(
-      "src/test/resources/layout/test.xml",
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/layout/test.xml"),
       ResourceNamespace.TODO()
     )
     val map = repository.allResources
