@@ -72,7 +72,7 @@ internal class Renderer(
         ) to
           ResourceRepositoryBridge.New(
             PaparazziResourceRepository(
-              resources = File(environment.resDir).getAllFiles(),
+              resources = environment.localeResDirs + environment.libraryResDirs,
               namespace = ResourceNamespace.TODO()
             )
           )
