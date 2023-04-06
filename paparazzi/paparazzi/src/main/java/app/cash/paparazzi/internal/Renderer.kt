@@ -47,7 +47,6 @@ internal class Renderer(
   /** Initialize the bridge and the resource maps. */
   fun prepare(): SessionParamsBuilder {
     val platformDataResDir = File("${environment.platformDir}/data/res")
-
     val useNewResourceLoading = System.getProperty(Flags.NEW_RESOURCE_LOADING).toBoolean()
     val (frameworkResources, projectResources) =
       if (!useNewResourceLoading) {
@@ -68,13 +67,14 @@ internal class Renderer(
       } else {
         ResourceRepositoryBridge.New(
           ProjectResourceRepository.create(
-            resourceDirectories = environment.localeResDirs,
-            namespace = ResourceNamespace.TODO()
+            localResourceDirs = platformDataResDir.listFiles()!!.map { it.listFiles()?.map { it.absolutePath } ?: emptyList() }.flatten(),
+            namespace = ResourceNamespace.ANDROID,
           )
         ) to
           ResourceRepositoryBridge.New(
             ProjectResourceRepository.create(
               localResourceDirs = environment.localeResDirs,
+              libraryResourceDirs = environment.libraryResDirs,
               namespace = ResourceNamespace.TODO()
             )
           )

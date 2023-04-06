@@ -57,6 +57,9 @@ abstract class PrepareResourcesTask : DefaultTask() {
   abstract val localResDirs: Property<String>
 
   @get:Input
+  abstract val libraryResDirs: Property<String>
+
+  @get:Input
   abstract val nonTransitiveRClassEnabled: Property<Boolean>
 
   @get:InputFiles
@@ -105,6 +108,8 @@ abstract class PrepareResourcesTask : DefaultTask() {
         it.write(localResourceFiles.joinFiles(projectDirectory))
         it.newLine()
         it.write(libraryResourceFiles.joinFiles(projectDirectory))
+        it.newLine()
+        it.write(libraryResDirs.get())
         it.newLine()
       }
   }
