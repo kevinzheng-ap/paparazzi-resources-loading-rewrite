@@ -141,6 +141,7 @@ class PaparazziResourceRepositoryTest {
     val firstItem = map[0].resourceValue as AttrResourceValue
     val secondItem = map[1].resourceValue as AttrResourceValue
     val styleable = map[2]
+    assertThat(map.size).isEqualTo(3)
     assertThat(styleable.name).isEqualTo("test_styleable")
     assertThat(firstItem.name).isEqualTo("TestAttrInt")
     assertThat(secondItem.name).isEqualTo("TestAttr")

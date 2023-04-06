@@ -4,7 +4,6 @@ import app.cash.paparazzi.internal.PaparazziResourceItem
 import app.cash.paparazzi.internal.PaparazziResourceRepository
 import app.cash.paparazzi.internal.pseudolocale.PaparazziPseudoResourceItem
 import com.android.SdkConstants
-import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.resources.ValueResourceNameValidator
 import com.android.resources.FolderTypeRelationship
 import com.android.resources.ResourceFolderType
