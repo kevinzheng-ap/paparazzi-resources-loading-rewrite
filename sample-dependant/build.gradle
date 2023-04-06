@@ -17,10 +17,3 @@ android {
     kotlinCompilerExtensionVersion libs.versions.composeCompiler.get()
   }
 }
-
-dependencies {
-  implementation libs.composeUi.material
-  implementation projects.sampleDependant
-
-  testImplementation libs.testParameterInjector
-}
