@@ -26,6 +26,9 @@ import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated
 import app.cash.paparazzi.deprecated.com.android.io.FolderWrapper
 import app.cash.paparazzi.getFieldReflectively
 import app.cash.paparazzi.setStaticValue
+import app.cash.paparazzi.res.AndroidFacet
+import app.cash.paparazzi.res.ProjectResourceRepository
+import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.layoutlib.bridge.Bridge
 import com.android.layoutlib.bridge.android.RenderParamsFlags
 import com.android.layoutlib.bridge.impl.DelegateManager
@@ -64,7 +67,20 @@ internal class Renderer(
             }.apply { loadResources() }
           )
       } else {
-        TODO("New resource loading coming soon")
+        ResourceRepositoryBridge.New(
+          ProjectResourceRepository.create(
+            facet = AndroidFacet(),
+            resourceDirectories = environment.localeResDirs,
+            namespace = ResourceNamespace.TODO()
+          )
+        ) to
+          ResourceRepositoryBridge.New(
+            ProjectResourceRepository.create(
+              facet = AndroidFacet(),
+              resourceDirectories = environment.localeResDirs,
+              namespace = ResourceNamespace.TODO()
+            )
+          )
       }
 
     sessionParamsBuilder = SessionParamsBuilder(
@@ -153,6 +169,7 @@ internal class Renderer(
         val osArch = System.getProperty("os.arch").lowercase(Locale.US)
         if (osArch.startsWith("x86")) "mac" else "mac-arm"
       }
+
       else -> "linux"
     }
     return "$osLabel/lib64"

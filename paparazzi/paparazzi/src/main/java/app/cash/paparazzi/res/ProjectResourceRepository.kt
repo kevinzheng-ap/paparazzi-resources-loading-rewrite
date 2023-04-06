@@ -1,6 +1,7 @@
 // Copyright Square, Inc.
 package app.cash.paparazzi.res
 
+import com.android.ide.common.rendering.api.ResourceNamespace
 import java.util.Collections
 
 /**
@@ -19,26 +20,37 @@ internal class ProjectResourceRepository private constructor(
   }
 
   companion object {
-    fun create(facet: AndroidFacet): ProjectResourceRepository {
-      val resources = computeRepositories(facet)
-      return ProjectResourceRepository(facet, resources)
+    fun create(
+      facet: AndroidFacet,
+      resourceDirectories: List<String>,
+      namespace: ResourceNamespace,
+    ): ProjectResourceRepository {
+      val resources = computeRepositories(facet, resourceDirectories, namespace)
+      return ProjectResourceRepository(AndroidFacet(), resources)
     }
 
-    private fun computeRepositories(facet: AndroidFacet): List<LocalResourceRepository> {
-      val main: LocalResourceRepository = StudioResourceRepositoryManager.getModuleResources(facet)
+    private fun computeRepositories(
+      facet: AndroidFacet,
+      resourceDirectories: List<String>,
+      namespace: ResourceNamespace,
+    ): List<LocalResourceRepository> {
+      val resources: LocalResourceRepository =
+        ModuleResourceRepository.forMainResources(facet, namespace, resourceDirectories)
 
-      // List of module facets the given module depends on.
-      val dependencies: List<AndroidFacet> =
-        AndroidDependenciesCache.getAndroidResourceDependencies(facet.getModule())
-      if (dependencies.isEmpty()) {
-        return Collections.singletonList(main)
-      }
-      val resources: MutableList<LocalResourceRepository> = ArrayList(dependencies.size + 1)
-      resources.add(main)
-      for (dependency in dependencies) {
-        resources.add(StudioResourceRepositoryManager.getModuleResources(dependency))
-      }
-      return resources
+      // val main: LocalResourceRepository = StudioResourceRepositoryManager.getModuleResources(facet)
+      //
+      // // List of module facets the given module depends on.
+      // val dependencies: List<AndroidFacet> =
+      //   AndroidDependenciesCache.getAndroidResourceDependencies(facet.getModule())
+      // if (dependencies.isEmpty()) {
+      //   return Collections.singletonList(main)
+      // }
+      // val resources: MutableList<LocalResourceRepository> = ArrayList(dependencies.size + 1)
+      // resources.add(main)
+      // for (dependency in dependencies) {
+      //   resources.add(StudioResourceRepositoryManager.getModuleResources(dependency))
+      // }
+      return listOf(resources)
     }
   }
 }

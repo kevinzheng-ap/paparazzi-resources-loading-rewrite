@@ -28,7 +28,7 @@ import com.android.ide.common.rendering.api.SessionParams
 import com.android.ide.common.rendering.api.SessionParams.Key
 import com.android.ide.common.rendering.api.SessionParams.RenderingMode
 import com.android.ide.common.resources.ResourceResolver
-import com.android.ide.common.resources.ResourceValueMap
+import com.android.ide.common.resources.getConfiguredResources
 import com.android.layoutlib.bridge.Bridge
 import com.android.resources.LayoutDirection
 import com.android.resources.ResourceType
@@ -64,6 +64,7 @@ internal data class SessionParamsBuilder(
       themeName.startsWith(SdkConstants.PREFIX_ANDROID) -> {
         withTheme(themeName.substring(SdkConstants.PREFIX_ANDROID.length), false)
       }
+
       else -> withTheme(themeName, true)
     }
   }
@@ -78,13 +79,17 @@ internal data class SessionParamsBuilder(
 
     val folderConfiguration = deviceConfig.folderConfiguration
     val resourceResolver = ResourceResolver.create(
-      mapOf<ResourceNamespace, Map<ResourceType, ResourceValueMap>>(
+      mapOf(
         when (frameworkResources) {
           is Legacy ->
             ResourceNamespace.ANDROID to
               frameworkResources.repository.getConfiguredResources(folderConfiguration)
 
-          is New -> TODO()
+          is New ->
+            ResourceNamespace.ANDROID to
+              frameworkResources.repository.getConfiguredResources(
+                folderConfiguration
+              ).row(ResourceNamespace.ANDROID)
         },
         when (projectResources) {
           is Legacy -> {
@@ -92,7 +97,11 @@ internal data class SessionParamsBuilder(
               projectResources.repository.getConfiguredResources(folderConfiguration)
           }
 
-          is New -> TODO()
+          is New ->
+            ResourceNamespace.TODO() to
+              projectResources.repository.getConfiguredResources(
+                folderConfiguration
+              ).row(ResourceNamespace.TODO())
         }
       ),
       ResourceReference(

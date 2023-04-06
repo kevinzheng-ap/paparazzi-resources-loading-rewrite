@@ -18,14 +18,14 @@ internal class AppResourceRepository private constructor(
   }
 
   companion object {
-    fun create(
-      facet: AndroidFacet,
-    ): AppResourceRepository = AppResourceRepository(facet, computeLocalRepositories(facet), emptyList())
-
-    private fun computeLocalRepositories(facet: AndroidFacet): List<LocalResourceRepository> {
-      return listOf(
-        ProjectResourceRepository.create(facet),
-      )
-    }
+    // fun create(
+    //   facet: AndroidFacet,
+    // ): AppResourceRepository = AppResourceRepository(facet, computeLocalRepositories(facet), emptyList())
+    //
+    // private fun computeLocalRepositories(facet: AndroidFacet): List<LocalResourceRepository> {
+    //   return listOf(
+    //     ProjectResourceRepository.create(facet),
+    //   )
+    // }
   }
 }

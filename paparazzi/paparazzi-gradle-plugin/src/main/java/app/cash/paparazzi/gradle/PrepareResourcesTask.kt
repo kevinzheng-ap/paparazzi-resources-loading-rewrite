@@ -54,6 +54,9 @@ abstract class PrepareResourcesTask : DefaultTask() {
   abstract val mergeAssetsOutputDir: Property<String>
 
   @get:Input
+  abstract val localResDirs: Property<String>
+
+  @get:Input
   abstract val nonTransitiveRClassEnabled: Property<Boolean>
 
   @get:InputFiles
