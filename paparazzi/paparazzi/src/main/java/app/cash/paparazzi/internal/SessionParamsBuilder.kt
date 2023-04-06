@@ -63,7 +63,6 @@ internal data class SessionParamsBuilder(
       themeName.startsWith(SdkConstants.PREFIX_ANDROID) -> {
         withTheme(themeName.substring(SdkConstants.PREFIX_ANDROID.length), false)
       }
-
       else -> withTheme(themeName, true)
     }
   }

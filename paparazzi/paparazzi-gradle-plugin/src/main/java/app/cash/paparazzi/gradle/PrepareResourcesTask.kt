@@ -65,7 +65,6 @@ abstract class PrepareResourcesTask : DefaultTask() {
   abstract val paparazziResources: RegularFileProperty
 
   private val projectDirectory = project.layout.projectDirectory
-  private val buildDirectoryProperty = project.layout.buildDirectory
 
   @TaskAction
   // TODO: figure out why this can't be removed as of Kotlin 1.6+
@@ -85,8 +84,6 @@ abstract class PrepareResourcesTask : DefaultTask() {
     } else {
       mainPackage
     }
-
-    val buildDirectory = buildDirectoryProperty.get()
 
     out.bufferedWriter()
       .use {

@@ -123,5 +123,5 @@ internal class Renderer(
     }
   }
 
-  fun File.getAllFiles() = listFiles()!!.map { it.listFiles()?.map { it.absolutePath } ?: emptyList() }.flatten()
+  private fun File.getAllFiles() = listFiles()!!.map { it.listFiles()?.map { it.absolutePath } ?: emptyList() }.flatten()
 }

@@ -1,7 +1,6 @@
 rootProject.name = 'paparazzi-root'
 
 include ':sample'
-include ':sample-dependant'
 
 includeBuild('paparazzi') {
   dependencySubstitution {

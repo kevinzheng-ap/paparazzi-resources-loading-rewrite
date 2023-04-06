@@ -57,14 +57,14 @@ internal class PaparazziResourceRepository constructor(
   }
 
   fun addResourceItem(item: ResourceItem) {
-      val resourceType = item.type
-      var map: ListMultimap<String, ResourceItem>? = resourceTable.get(namespace, resourceType)
-      if (map == null) {
-        map = ArrayListMultimap.create()
-        resourceTable.put(namespace, resourceType, map!!)
-      }
+    val resourceType = item.type
+    var map: ListMultimap<String, ResourceItem>? = resourceTable.get(namespace, resourceType)
+    if (map == null) {
+      map = ArrayListMultimap.create()
+      resourceTable.put(namespace, resourceType, map!!)
+    }
 
-      map.put(item.name, item)
+    map.put(item.name, item)
   }
 
   override fun accept(visitor: ResourceVisitor): VisitResult {

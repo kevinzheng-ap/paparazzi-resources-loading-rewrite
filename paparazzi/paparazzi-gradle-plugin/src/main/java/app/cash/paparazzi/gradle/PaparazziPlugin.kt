@@ -159,13 +159,11 @@ class PaparazziPlugin : Plugin<Project> {
         writeResourcesTask.configure { it.dependsOn(project.tasks.named("compile${testVariantSlug}Kotlin")) }
       }
 
-      val recordTaskProvider =
-        project.tasks.register("recordPaparazzi$variantSlug", PaparazziTask::class.java) {
+      val recordTaskProvider = project.tasks.register("recordPaparazzi$variantSlug", PaparazziTask::class.java) {
           it.group = VERIFICATION_GROUP
         }
       recordVariants.configure { it.dependsOn(recordTaskProvider) }
-      val verifyTaskProvider =
-        project.tasks.register("verifyPaparazzi$variantSlug", PaparazziTask::class.java) {
+      val verifyTaskProvider = project.tasks.register("verifyPaparazzi$variantSlug", PaparazziTask::class.java) {
           it.group = VERIFICATION_GROUP
         }
       verifyVariants.configure { it.dependsOn(verifyTaskProvider) }
@@ -193,8 +191,7 @@ class PaparazziPlugin : Plugin<Project> {
         test.outputs.dir(reportOutputDir)
         test.outputs.dir(snapshotOutputDir)
 
-        val paparazziProperties =
-          project.properties.filterKeys { it.startsWith("app.cash.paparazzi") }
+        val paparazziProperties = project.properties.filterKeys { it.startsWith("app.cash.paparazzi") }
 
         @Suppress("ObjectLiteralToLambda")
         // why not a lambda?  See: https://docs.gradle.org/7.2/userguide/validation_problems.html#implementation_unknown
@@ -229,10 +226,7 @@ class PaparazziPlugin : Plugin<Project> {
   }
 
   open class PaparazziTask : DefaultTask() {
-    @Option(
-      option = "tests",
-      description = "Sets test class or method name to be included, '*' is supported."
-    )
+    @Option(option = "tests", description = "Sets test class or method name to be included, '*' is supported.")
     open fun setTestNameIncludePatterns(testNamePattern: List<String>): PaparazziTask {
       project.tasks.withType(Test::class.java).configureEach {
         it.setTestNameIncludePatterns(testNamePattern)
@@ -251,7 +245,6 @@ class PaparazziPlugin : Plugin<Project> {
         val osArch = System.getProperty("os.arch").lowercase(Locale.US)
         if (osArch.startsWith("x86")) "macosx" else "macarm"
       }
-
       operatingSystem.isWindows -> "win"
       else -> "linux"
     }

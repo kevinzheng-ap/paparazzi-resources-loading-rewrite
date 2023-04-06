@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <string name="hello">Hello</string>
-  <string name="hello_not_translatable" translatable="false">Hello Not Translatable</string>
-</resources>
