@@ -160,12 +160,12 @@ class PaparazziPlugin : Plugin<Project> {
       }
 
       val recordTaskProvider = project.tasks.register("recordPaparazzi$variantSlug", PaparazziTask::class.java) {
-          it.group = VERIFICATION_GROUP
-        }
+        it.group = VERIFICATION_GROUP
+      }
       recordVariants.configure { it.dependsOn(recordTaskProvider) }
       val verifyTaskProvider = project.tasks.register("verifyPaparazzi$variantSlug", PaparazziTask::class.java) {
-          it.group = VERIFICATION_GROUP
-        }
+        it.group = VERIFICATION_GROUP
+      }
       verifyVariants.configure { it.dependsOn(verifyTaskProvider) }
 
       val isRecordRun = project.objects.property(Boolean::class.java)
@@ -305,4 +305,3 @@ private fun DirectoryProperty.asRelativePathString(child: Provider<Directory>): 
 //  acceptable as the minimum supported version
 private val ARTIFACT_TYPE_ATTRIBUTE = Attribute.of("artifactType", String::class.java)
 private const val DEFAULT_COMPILE_SDK_VERSION = 33
-
