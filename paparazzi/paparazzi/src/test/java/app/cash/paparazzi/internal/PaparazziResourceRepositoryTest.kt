@@ -161,4 +161,112 @@ class PaparazziResourceRepositoryTest {
     assertThat(firstId.name).isEqualTo("test_view")
     assertThat(secondId.name).isEqualTo("test_layout")
   }
+
+  @Test
+  fun drawableTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/drawable/ic_android_black_24dp.xml"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val resource = map[0].resourceValue as ResourceValue
+    assertThat(resource.name).isEqualTo("ic_android_black_24dp")
+    assertThat(resource.resourceType).isEqualTo(ResourceType.DRAWABLE)
+  }
+
+  @Test
+  fun animTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/anim/slide_in_from_left.xml"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val resource = map[0].resourceValue as ResourceValue
+    assertThat(resource.name).isEqualTo("slide_in_from_left")
+    assertThat(resource.resourceType).isEqualTo(ResourceType.ANIM)
+  }
+
+  @Test
+  fun colorTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/color/color_selector.xml"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val resource = map[0].resourceValue as ResourceValue
+    assertThat(resource.name).isEqualTo("color_selector")
+    assertThat(resource.resourceType).isEqualTo(ResourceType.COLOR)
+  }
+
+  @Test
+  fun animatorTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/animator/test_animator.xml"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val resource = map[0].resourceValue as ResourceValue
+    assertThat(resource.name).isEqualTo("test_animator")
+    assertThat(resource.resourceType).isEqualTo(ResourceType.ANIMATOR)
+  }
+
+  @Test
+  fun mipmapTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/mipmap/ic_launcher.xml"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val resource = map[0].resourceValue as ResourceValue
+    assertThat(resource.name).isEqualTo("ic_launcher")
+    assertThat(resource.resourceType).isEqualTo(ResourceType.MIPMAP)
+  }
+
+  @Test
+  fun menuTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/menu/test_menu.xml"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val firstId = map[0].resourceValue as ResourceValue
+    val secondId = map[1].resourceValue as ResourceValue
+    assertThat(firstId.name).isEqualTo("test_menu_1")
+    assertThat(secondId.name).isEqualTo("test_menu_2")
+  }
+
+  @Test
+  fun xmlTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/xml/test_network_security_config.xml"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val resource = map[0].resourceValue as ResourceValue
+    assertThat(resource.name).isEqualTo("test_network_security_config")
+    assertThat(resource.resourceType).isEqualTo(ResourceType.XML)
+  }
+
+  @Test
+  fun rawTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/raw/test_json.json"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val resource = map[0].resourceValue as ResourceValue
+    assertThat(resource.name).isEqualTo("test_json")
+    assertThat(resource.resourceType).isEqualTo(ResourceType.RAW)
+  }
+
+  @Test
+  fun fontTest() {
+    val repository = PaparazziResourceRepository(
+      listOf("src/test/resources/font/aclonica.xml"),
+      ResourceNamespace.TODO()
+    )
+    val map = repository.allResources
+    val resource = map[0].resourceValue as ResourceValue
+    assertThat(resource.resourceType).isEqualTo(ResourceType.FONT)
+  }
 }
