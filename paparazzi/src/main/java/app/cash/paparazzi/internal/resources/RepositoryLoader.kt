@@ -33,6 +33,7 @@ import com.android.SdkConstants.ATTR_INDEX
 import com.android.SdkConstants.ATTR_NAME
 import com.android.SdkConstants.ATTR_PARENT
 import com.android.SdkConstants.ATTR_QUANTITY
+import com.android.SdkConstants.ATTR_TRANSLATABLE
 import com.android.SdkConstants.ATTR_TYPE
 import com.android.SdkConstants.ATTR_VALUE
 import com.android.SdkConstants.DOT_AAR
@@ -151,6 +152,8 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
   // Used to keep track of resources defined in the current value resource file.
   private val valueFileResources: Table<ResourceType, String, BasicValueResourceItemBase> =
     Tables.newCustomTable(EnumMap(ResourceType::class.java)) { LinkedHashMap() }
+  private val pseudoValueFileResources: Table<String, String, BasicValueResourceItemBase> =
+    Tables.newCustomTable(mutableMapOf()) { LinkedHashMap() }
   private val resourceDirectoryOrFilePath = PathString(resourceDirectoryOrFile)
   private val isLoadingFromZipArchive = isZipArchive(resourceDirectoryOrFile)
 
@@ -403,10 +406,11 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
   }
 
   protected fun addValueFileResources() {
-    for (item in valueFileResources.values()) {
+    for (item in valueFileResources.values() + pseudoValueFileResources.values()) {
       addResourceItem(item)
     }
     valueFileResources.clear()
+    pseudoValueFileResources.clear()
   }
 
   protected fun parseIdGeneratingResourceFile(
@@ -687,6 +691,13 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
     val visibility = getVisibility(PLURALS, name)
     val item = BasicPluralsResourceItem(name, sourceFile, visibility, values, defaultArity)
     item.namespaceResolver = namespaceResolver
+
+    if (parser.getAttributeValue(null, ATTR_TRANSLATABLE)?.toBooleanStrictOrNull() != false) {
+      pseudolocalizeIfNeeded(item) {
+        pseudoValueFileResources.put(it.name, it.configuration.localeQualifier.language, it)
+      }
+    }
+
     return item
   }
 
@@ -708,6 +719,13 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
       BasicTextValueResourceItem(type, name, sourceFile, visibility, text, rawXml)
     }
     item.namespaceResolver = namespaceResolver
+
+    if (withRowXml && parser.getAttributeValue(null, ATTR_TRANSLATABLE)?.toBooleanStrictOrNull() != false) {
+      pseudolocalizeIfNeeded(item) {
+        pseudoValueFileResources.put(it.configuration.localeQualifier.language, it.name, it)
+      }
+    }
+
     return item
   }
 
@@ -1104,11 +1122,6 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
     }
 
     fun getRawXml(): String? = if (nontrivialRawXml) rawXml.toString() else null
-
-    companion object {
-      private fun isXliffNamespace(namespaceUri: String?) =
-        namespaceUri?.startsWith(ResourceItem.XLIFF_NAMESPACE_PREFIX) ?: false
-    }
   }
 
   private class XmlSyntaxException(error: String, parser: XmlPullParser, filename: String) :

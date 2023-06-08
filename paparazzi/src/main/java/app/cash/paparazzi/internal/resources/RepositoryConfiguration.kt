@@ -16,6 +16,7 @@
 package app.cash.paparazzi.internal.resources
 
 import com.android.ide.common.resources.configuration.FolderConfiguration
+import com.android.ide.common.resources.configuration.LocaleQualifier
 import com.android.utils.HashCodes
 
 /**
@@ -59,5 +60,11 @@ class RepositoryConfiguration(
    */
   override fun hashCode(): Int {
     return HashCodes.mix(repository.origin.hashCode(), folderConfiguration.hashCode())
+  }
+
+  fun onNewLocaleQualifier(localeQualifier: LocaleQualifier): RepositoryConfiguration {
+    val folderConfiguration = FolderConfiguration.copyOf(folderConfiguration)
+    folderConfiguration.localeQualifier = localeQualifier
+    return RepositoryConfiguration(repository, folderConfiguration)
   }
 }

@@ -8,6 +8,7 @@ import com.android.ide.common.resources.ResourceRepository
 import com.android.resources.ResourceType
 import com.android.resources.ResourceType.ATTR
 import com.android.resources.ResourceType.ID
+import com.android.resources.ResourceType.STRING
 import com.android.resources.ResourceVisibility
 import com.android.resources.ResourceVisibility.PRIVATE
 import com.android.resources.ResourceVisibility.PUBLIC
@@ -82,7 +83,7 @@ class FrameworkResourceRepositoryTest {
       if (languages == null) {
         assertThat(repository.languageGroups.size).isAtLeast(75)
       } else {
-        assertThat(repository.languageGroups).isEqualTo(languages.union(setOf("")))
+        assertThat(repository.languageGroups).isEqualTo(languages.union(setOf("", "en", "ar")))
       }
     }
   }
@@ -91,6 +92,7 @@ class FrameworkResourceRepositoryTest {
     checkPublicResources(repository)
     checkAttributes(repository)
     checkIdResources(repository)
+    checkPseudolocalizedResources(repository)
   }
 
   private fun checkPublicResources(repository: ResourceRepository) {
@@ -181,5 +183,12 @@ class FrameworkResourceRepositoryTest {
     // The following ID resource is defined by android:id="@+id/radio_power" in layout/power_dialog.xml.
     items = repository.getResources(ResourceNamespace.ANDROID, ID, "radio_power")
     assertThat(items).hasSize(1)
+  }
+
+  private fun checkPseudolocalizedResources(repository: ResourceRepository) {
+    var items = repository.getResources(ResourceNamespace.ANDROID, STRING, "view_and_control_notification_title")
+    assertThat(items[0].resourceValue.value).isEqualTo("Check access settings")
+    assertThat(items[1].resourceValue.value).isEqualTo("[Çĥéçķ åççéšš šéţţîñĝš one two three]")
+    assertThat(items[2].resourceValue.value).isEqualTo("${bidiWordStart}Check$bidiWordEnd ${bidiWordStart}access$bidiWordEnd ${bidiWordStart}settings$bidiWordEnd")
   }
 }

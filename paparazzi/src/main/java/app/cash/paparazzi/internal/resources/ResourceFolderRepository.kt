@@ -220,6 +220,11 @@ class ResourceFolderRepository(
         val sourceFile = item.sourceFile as ResourceFile
         val file = sourceFile.file
         if (file != null && !file.isDirectory) {
+          // migrate current sourceFile to the new one when they have same resource file
+          // it happens when manually creating pseudo strings
+          if (sources[file] != sourceFile) {
+            sources[file]?.forEach { sourceFile.addItem(it) }
+          }
           sourceFile.addItem(item)
           sources[file] = sourceFile
         }

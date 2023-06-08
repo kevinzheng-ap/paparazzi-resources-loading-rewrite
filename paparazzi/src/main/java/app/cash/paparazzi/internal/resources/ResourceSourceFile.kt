@@ -15,6 +15,8 @@
  */
 package app.cash.paparazzi.internal.resources
 
+import com.android.ide.common.resources.configuration.LocaleQualifier
+
 /**
  * Ported from: [ResourceSourceFile.kt](https://cs.android.com/android-studio/platform/tools/base/+/18047faf69512736b8ddb1f6a6785f58d47c893f:resource-repository/main/java/com/android/resources/base/ResourceSourceFile.kt)
  *
@@ -34,4 +36,6 @@ interface ResourceSourceFile {
 
   val repository: LoadableResourceRepository
     get() = configuration.repository
+
+  fun onNewLocaleQualifier(localeQualifier: LocaleQualifier): ResourceSourceFile
 }

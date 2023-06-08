@@ -1,5 +1,6 @@
 package app.cash.paparazzi.internal.resources
 
+import app.cash.paparazzi.internal.resources.base.BasicTextValueResourceItem
 import com.android.ide.common.rendering.api.ArrayResourceValue
 import com.android.ide.common.rendering.api.AttrResourceValue
 import com.android.ide.common.rendering.api.AttributeFormat
@@ -22,7 +23,7 @@ class ResourceFolderRepositoryTest {
     )
 
     val map = repository.allResources
-    assertThat(map.size).isEqualTo(32)
+    assertThat(map.size).isEqualTo(41)
 
     // ANIM
     assertThat(map[0].name).isEqualTo("slide_in_from_left")
@@ -127,23 +128,69 @@ class ResourceFolderRepositoryTest {
       assertThat(getQuantity(1)).isEqualTo("one")
       assertThat(getValue(1)).isEqualTo("One String")
     }
+    assertThat(map[26].name).isEqualTo("plural_name")
+    assertThat(map[26].type).isEqualTo(ResourceType.PLURALS)
+    with(map[26].resourceValue as PluralsResourceValue) {
+      assertThat(pluralsCount).isEqualTo(2)
+      assertThat(getQuantity(0)).isEqualTo("zero")
+      assertThat(getValue(0)).isEqualTo("[Ñöţĥîñĝ one two]")
+      assertThat(getQuantity(1)).isEqualTo("one")
+      assertThat(getValue(1)).isEqualTo("[Öñé Šţŕîñĝ one two]")
+    }
+
+    assertThat(map[27].name).isEqualTo("plural_name")
+    assertThat(map[27].type).isEqualTo(ResourceType.PLURALS)
+    with(map[27].resourceValue as PluralsResourceValue) {
+      assertThat(pluralsCount).isEqualTo(2)
+      assertThat(getQuantity(0)).isEqualTo("zero")
+      assertThat(getValue(0)).isEqualTo("${bidiWordStart}Nothing$bidiWordEnd")
+      assertThat(getQuantity(1)).isEqualTo("one")
+      assertThat(getValue(1)).isEqualTo("${bidiWordStart}One$bidiWordEnd ${bidiWordStart}String$bidiWordEnd")
+    }
 
     // RAW
-    assertThat(map[26].name).isEqualTo("test_json")
-    assertThat(map[26].type).isEqualTo(ResourceType.RAW)
+    assertThat(map[28].name).isEqualTo("test_json")
+    assertThat(map[28].type).isEqualTo(ResourceType.RAW)
 
-    // STRINGS
-    assertThat(map[27].name).isEqualTo("string_name")
-    assertThat(map[27].type).isEqualTo(ResourceType.STRING)
-    assertThat(map[27].resourceValue.value).isEqualTo("Test String")
-    assertThat(map[28].name).isEqualTo("string_name_xliff")
-    assertThat(map[28].type).isEqualTo(ResourceType.STRING)
-    assertThat(map[28].resourceValue.value).isEqualTo("Test String {0} with suffix")
+    // STRING
+    assertThat(map[29].name).isEqualTo("string_name")
+    assertThat(map[29].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[29].resourceValue.value).isEqualTo("Test String")
+    assertThat(map[30].name).isEqualTo("string_name_xliff")
+    assertThat(map[30].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[30].resourceValue.value).isEqualTo("Test String {0} with suffix")
+    assertThat((map[30].resourceValue as BasicTextValueResourceItem).rawXmlValue).isEqualTo("Test String <xliff:g id=\"number\" example=\"9\">{0}</xliff:g> with suffix")
+    assertThat(map[31].name).isEqualTo("string_name_html")
+    assertThat(map[31].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[31].resourceValue.value).isEqualTo("<html>Test String <b>with</b> html</html>")
+    assertThat((map[31].resourceValue as BasicTextValueResourceItem).rawXmlValue).isEqualTo("<![CDATA[<html>Test String <b>with</b> html</html>]]>")
+    assertThat(map[32].name).isEqualTo("string_name")
+    assertThat(map[32].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[32].resourceValue.value).isEqualTo("[Ţéšţ Šţŕîñĝ one two]")
+    assertThat(map[33].name).isEqualTo("string_name_xliff")
+    assertThat(map[33].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[33].resourceValue.value).isEqualTo("[Ţéšţ Šţŕîñĝ »{0}« ŵîţĥ šûƒƒîх one two three]")
+    assertThat((map[33].resourceValue as BasicTextValueResourceItem).rawXmlValue).isEqualTo("[Ţéšţ Šţŕîñĝ <xliff:g id=\"number\" example=\"9\">»{0}«</xliff:g> ŵîţĥ šûƒƒîх one two three]")
+    assertThat(map[34].name).isEqualTo("string_name_html")
+    assertThat(map[34].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[34].resourceValue.value).isEqualTo("[<html>Ţéšţ Šţŕîñĝ <b>ŵîţĥ</b> ĥţḿļ</html> one two three]")
+    assertThat((map[34].resourceValue as BasicTextValueResourceItem).rawXmlValue).isEqualTo("[<![CDATA[<html>Ţéšţ Šţŕîñĝ <b>ŵîţĥ</b> ĥţḿļ</html>]]> one two three]")
+    assertThat(map[35].name).isEqualTo("string_name")
+    assertThat(map[35].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[35].resourceValue.value).isEqualTo("${bidiWordStart}Test$bidiWordEnd ${bidiWordStart}String$bidiWordEnd")
+    assertThat(map[36].name).isEqualTo("string_name_xliff")
+    assertThat(map[36].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[36].resourceValue.value).isEqualTo("${bidiWordStart}Test$bidiWordEnd ${bidiWordStart}String$bidiWordEnd $bidiWordStart{0}$bidiWordEnd ${bidiWordStart}with$bidiWordEnd ${bidiWordStart}suffix$bidiWordEnd")
+    assertThat((map[36].resourceValue as BasicTextValueResourceItem).rawXmlValue).isEqualTo("${bidiWordStart}Test$bidiWordEnd ${bidiWordStart}String$bidiWordEnd $bidiWordStart<xliff:g$bidiWordEnd ${bidiWordStart}id=\"number\"$bidiWordEnd ${bidiWordStart}example=\"9\">$bidiWordEnd$bidiWordStart{0}$bidiWordEnd$bidiWordStart</xliff:g>$bidiWordEnd ${bidiWordStart}with$bidiWordEnd ${bidiWordStart}suffix$bidiWordEnd")
+    assertThat(map[37].name).isEqualTo("string_name_html")
+    assertThat(map[37].type).isEqualTo(ResourceType.STRING)
+    assertThat(map[37].resourceValue.value).isEqualTo("$bidiWordStart<html>Test$bidiWordEnd ${bidiWordStart}String$bidiWordEnd $bidiWordStart<b>with</b>$bidiWordEnd ${bidiWordStart}html</html>$bidiWordEnd")
+    assertThat((map[37].resourceValue as BasicTextValueResourceItem).rawXmlValue).isEqualTo("$bidiWordStart<![CDATA[<html>Test$bidiWordEnd ${bidiWordStart}String$bidiWordEnd $bidiWordStart<b>with</b>$bidiWordEnd ${bidiWordStart}html</html>]]>$bidiWordEnd")
 
     // STYLE XML
-    assertThat(map[29].name).isEqualTo("TestStyle")
-    assertThat(map[29].type).isEqualTo(ResourceType.STYLE)
-    with(map[29].resourceValue as StyleResourceValue) {
+    assertThat(map[38].name).isEqualTo("TestStyle")
+    assertThat(map[38].type).isEqualTo(ResourceType.STYLE)
+    with(map[38].resourceValue as StyleResourceValue) {
       assertThat(definedItems.size).isEqualTo(2)
       assertThat(definedItems.elementAt(0).attrName).isEqualTo("android:scrollbars")
       assertThat(definedItems.elementAt(0).value).isEqualTo("horizontal")
@@ -152,9 +199,9 @@ class ResourceFolderRepositoryTest {
     }
 
     // STYLEABLE
-    assertThat(map[30].name).isEqualTo("test_styleable")
-    assertThat(map[30].type).isEqualTo(ResourceType.STYLEABLE)
-    with(map[30].resourceValue as StyleableResourceValue) {
+    assertThat(map[39].name).isEqualTo("test_styleable")
+    assertThat(map[39].type).isEqualTo(ResourceType.STYLEABLE)
+    with(map[39].resourceValue as StyleableResourceValue) {
       assertThat(allAttributes.size).isEqualTo(3)
       assertThat(allAttributes[0].name).isEqualTo("TestAttr")
       assertThat(allAttributes[1].name).isEqualTo("TestAttrInt")
@@ -162,7 +209,7 @@ class ResourceFolderRepositoryTest {
     }
 
     // XML
-    assertThat(map[31].name).isEqualTo("test_network_security_config")
-    assertThat(map[31].type).isEqualTo(ResourceType.XML)
+    assertThat(map[40].name).isEqualTo("test_network_security_config")
+    assertThat(map[40].type).isEqualTo(ResourceType.XML)
   }
 }

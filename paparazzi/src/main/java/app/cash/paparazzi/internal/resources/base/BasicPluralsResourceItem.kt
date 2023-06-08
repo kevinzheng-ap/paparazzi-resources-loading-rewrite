@@ -35,7 +35,7 @@ class BasicPluralsResourceItem private constructor(
   sourceFile: ResourceSourceFile,
   visibility: ResourceVisibility,
   private val arities: Array<Arity>,
-  private val values: Array<String>,
+  val values: Array<String>,
   private val defaultIndex: Int
 ) : BasicValueResourceItemBase(ResourceType.PLURALS, name, sourceFile, visibility),
   PluralsResourceValue {
@@ -52,6 +52,19 @@ class BasicPluralsResourceItem private constructor(
     quantityValues.keys.toTypedArray(),
     quantityValues.values.toTypedArray(),
     getIndex(defaultArity, quantityValues.keys)
+  )
+
+  constructor(
+    original: BasicPluralsResourceItem,
+    sourceFile: ResourceSourceFile,
+    values: Array<String>
+  ) : this(
+    original.name,
+    sourceFile,
+    original.visibility,
+    original.arities,
+    values,
+    original.defaultIndex
   )
 
   init {

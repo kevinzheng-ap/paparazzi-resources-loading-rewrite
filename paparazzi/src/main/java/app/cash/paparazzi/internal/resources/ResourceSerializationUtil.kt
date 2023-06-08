@@ -16,6 +16,7 @@
 package app.cash.paparazzi.internal.resources
 
 import app.cash.paparazzi.internal.resources.base.BasicResourceItem
+import app.cash.paparazzi.internal.resources.base.BasicValueResourceItemBase
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.utils.Base128InputStream
 import com.android.utils.Base128InputStream.StreamFormatException
@@ -76,6 +77,12 @@ object ResourceSerializationUtil {
         newNamespaceResolvers
       )
       resourceConsumer.accept(item)
+
+      if (item is BasicValueResourceItemBase) {
+        pseudolocalizeIfNeeded(item) {
+          resourceConsumer.accept(it)
+        }
+      }
     }
   }
 }

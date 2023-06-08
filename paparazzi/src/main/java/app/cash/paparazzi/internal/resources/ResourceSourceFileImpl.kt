@@ -15,6 +15,7 @@
  */
 package app.cash.paparazzi.internal.resources
 
+import com.android.ide.common.resources.configuration.LocaleQualifier
 import com.android.utils.Base128InputStream
 import java.io.IOException
 
@@ -30,6 +31,10 @@ data class ResourceSourceFileImpl(
   override val relativePath: String?,
   override val configuration: RepositoryConfiguration
 ) : ResourceSourceFile {
+  override fun onNewLocaleQualifier(localeQualifier: LocaleQualifier): ResourceSourceFile {
+    return ResourceSourceFileImpl(relativePath, configuration.onNewLocaleQualifier(localeQualifier))
+  }
+
   companion object {
     /**
      * Creates a [ResourceSourceFileImpl] by reading its contents from the given stream.

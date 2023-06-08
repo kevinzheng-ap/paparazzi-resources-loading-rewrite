@@ -89,7 +89,7 @@ class AarSourceResourceRepositoryTest {
     )
     val items = repository.getResources(ResourceNamespace.RES_AUTO, ResourceType.STRING, "hello")
     val helloVariants = getValues(items)
-    assertThat(helloVariants).containsExactly("bonjour", "hello")
+    assertThat(helloVariants).containsExactly("bonjour", "hello", "[ĥéļļö one]", "${bidiWordStart}hello$bidiWordEnd")
   }
 
   @Test fun libraryNameIsMaintained() {
@@ -122,7 +122,7 @@ class AarSourceResourceRepositoryTest {
         resourceName = "hello"
       )
       val helloVariants = getValues(items)
-      assertThat(helloVariants).containsExactly("bonjour", "hello", "hola")
+      assertThat(helloVariants).containsExactly("bonjour", "hello", "hola", "[ĥéļļö one]", "${bidiWordStart}hello$bidiWordEnd")
 
       items = repository.getResources(
         namespace = ResourceNamespace.RES_AUTO,
