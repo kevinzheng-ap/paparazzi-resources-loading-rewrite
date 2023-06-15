@@ -1,5 +1,6 @@
 package app.cash.paparazzi.internal.resources
 
+import app.cash.paparazzi.internal.resources.base.BasicArrayResourceItem
 import app.cash.paparazzi.internal.resources.base.BasicPluralsResourceItem
 import app.cash.paparazzi.internal.resources.base.BasicTextValueResourceItem
 import app.cash.paparazzi.internal.resources.base.BasicValueResourceItem
@@ -8,7 +9,7 @@ import com.android.ide.common.resources.configuration.LocaleQualifier
 import com.android.resources.ResourceType
 import java.util.function.Consumer
 
-private const val DO_NOT_TRANSLATE = "do_not_translate"
+private const val DO_NOT_TRANSLATE = "donottranslate"
 
 fun pseudolocalizeIfNeeded(
   resource: BasicValueResourceItemBase,
@@ -33,9 +34,7 @@ private fun pseudolocalizeIfNeeded(
     Pseudolocalizer.Method.BIDI -> "ar-rXB"
   }
 
-  val pseudoLocaleSourceFile = resourceItem.sourceFile.onNewLocaleQualifier(
-    LocaleQualifier.getQualifier(pseudoLocaleQualifier)
-  )
+  val pseudoLocaleSourceFile = resourceItem.sourceFile.onNewLocaleQualifier(LocaleQualifier.getQualifier(pseudoLocaleQualifier))
   val pseudoItem: BasicValueResourceItemBase = when (resourceItem.resourceType) {
     ResourceType.STRING -> pseudolocalizeString(
       resourceItem as BasicValueResourceItem,
@@ -45,6 +44,12 @@ private fun pseudolocalizeIfNeeded(
 
     ResourceType.PLURALS -> pseudolocalizePlural(
       resourceItem as BasicPluralsResourceItem,
+      pseudoLocaleSourceFile,
+      method
+    )
+
+    ResourceType.ARRAY -> pseudolocalizeArray(
+      resourceItem as BasicArrayResourceItem,
       pseudoLocaleSourceFile,
       method
     )
@@ -64,26 +69,12 @@ private fun pseudolocalizeString(
   method: Pseudolocalizer.Method
 ): BasicValueResourceItem {
   val pseudoText = original.value?.let { it.pseudoLocalize(method) }
-  val pseudoRawXml =
-    (original as? BasicTextValueResourceItem)?.rawXmlValue?.let { it.pseudoLocalize(method) }
+  val pseudoRawXml = (original as? BasicTextValueResourceItem)?.rawXmlValue?.let { it.pseudoLocalize(method) }
 
   val pseudoItem = if (pseudoRawXml == null) {
-    BasicValueResourceItem(
-      original.type,
-      original.name,
-      sourceFile,
-      original.visibility,
-      pseudoText
-    )
+    BasicValueResourceItem(original.type, original.name, sourceFile, original.visibility, pseudoText)
   } else {
-    BasicTextValueResourceItem(
-      original.type,
-      original.name,
-      sourceFile,
-      original.visibility,
-      pseudoText,
-      pseudoRawXml
-    )
+    BasicTextValueResourceItem(original.type, original.name, sourceFile, original.visibility, pseudoText, pseudoRawXml)
   }
   pseudoItem.namespaceResolver = original.namespaceResolver
   return pseudoItem
@@ -95,11 +86,18 @@ private fun pseudolocalizePlural(
   method: Pseudolocalizer.Method
 ): BasicPluralsResourceItem {
   val pseudoValues = original.values.map { it.pseudoLocalize(method) }.toTypedArray()
-  val pseudoItem = BasicPluralsResourceItem(
-    original,
-    sourceFile,
-    pseudoValues
-  )
+  val pseudoItem = BasicPluralsResourceItem(original, sourceFile, pseudoValues)
+  pseudoItem.namespaceResolver = original.namespaceResolver
+  return pseudoItem
+}
+
+private fun pseudolocalizeArray(
+  original: BasicArrayResourceItem,
+  sourceFile: ResourceSourceFile,
+  method: Pseudolocalizer.Method
+): BasicArrayResourceItem {
+  val pseudoValues = original.toList().map { it.pseudoLocalize(method) }
+  val pseudoItem = BasicArrayResourceItem(original.name, sourceFile, original.visibility, pseudoValues, original.defaultIndex)
   pseudoItem.namespaceResolver = original.namespaceResolver
   return pseudoItem
 }

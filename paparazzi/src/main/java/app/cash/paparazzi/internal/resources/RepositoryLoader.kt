@@ -549,6 +549,7 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
   ): BasicArrayResourceItem {
     val indexValue = parser.getAttributeValue(TOOLS_URI, ATTR_INDEX)
     val namespaceResolver = parser.namespaceResolver
+    val translatable = parser.getAttributeValue(null, ATTR_TRANSLATABLE)?.toBooleanStrictOrNull() != false
     val values = mutableListOf<String>()
     forSubTags(TAG_ITEM) {
       values += textExtractor.extractText(parser, false)
@@ -575,6 +576,13 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
     val visibility = getVisibility(ARRAY, name)
     val item = BasicArrayResourceItem(name, sourceFile, visibility, values, index)
     item.namespaceResolver = namespaceResolver
+
+    if (translatable) {
+      pseudolocalizeIfNeeded(item) {
+        pseudoValueFileResources.put(it.configuration.localeQualifier.language, it.name, it)
+      }
+    }
+
     return item
   }
 
@@ -666,6 +674,7 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
   ): BasicPluralsResourceItem {
     val defaultQuantity = parser.getAttributeValue(TOOLS_URI, ATTR_QUANTITY)
     val namespaceResolver = parser.namespaceResolver
+    val translatable = parser.getAttributeValue(null, ATTR_TRANSLATABLE)?.toBooleanStrictOrNull() != false
     val values = EnumMap<Arity, String>(Arity::class.java)
     forSubTags(TAG_ITEM) {
       val quantityValue = parser.getAttributeValue(null, ATTR_QUANTITY)
@@ -692,7 +701,7 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
     val item = BasicPluralsResourceItem(name, sourceFile, visibility, values, defaultArity)
     item.namespaceResolver = namespaceResolver
 
-    if (parser.getAttributeValue(null, ATTR_TRANSLATABLE)?.toBooleanStrictOrNull() != false) {
+    if (translatable) {
       pseudolocalizeIfNeeded(item) {
         pseudoValueFileResources.put(it.name, it.configuration.localeQualifier.language, it)
       }
@@ -709,6 +718,7 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
     withRowXml: Boolean
   ): BasicValueResourceItem {
     val namespaceResolver = parser.namespaceResolver
+    val translatable = parser.getAttributeValue(null, ATTR_TRANSLATABLE)?.toBooleanStrictOrNull() != false
     val text = if (type == ResourceType.ID) null else textExtractor.extractText(parser, withRowXml)
     val rawXml = if (type == ResourceType.ID) null else textExtractor.getRawXml()
     assert(withRowXml || rawXml == null) // Text extractor doesn't extract raw XML unless asked to do it.
@@ -720,7 +730,7 @@ abstract class RepositoryLoader<T : LoadableResourceRepository>(
     }
     item.namespaceResolver = namespaceResolver
 
-    if (withRowXml && parser.getAttributeValue(null, ATTR_TRANSLATABLE)?.toBooleanStrictOrNull() != false) {
+    if (translatable) {
       pseudolocalizeIfNeeded(item) {
         pseudoValueFileResources.put(it.configuration.localeQualifier.language, it.name, it)
       }

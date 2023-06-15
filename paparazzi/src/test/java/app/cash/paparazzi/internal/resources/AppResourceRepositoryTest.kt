@@ -16,18 +16,18 @@ class AppResourceRepositoryTest {
     )
 
     val map = repository.allResources
-    assertThat(map.size).isEqualTo(56)
+    assertThat(map.size).isEqualTo(64)
 
     assertThat(map[0].name).isEqualTo("slide_in_from_left")
     assertThat(map[0].type).isEqualTo(ResourceType.ANIM)
     assertThat(map[1].name).isEqualTo("test_animator")
     assertThat(map[1].type).isEqualTo(ResourceType.ANIMATOR)
 
-    assertThat(map[4].name).isEqualTo("some_attr")
-    assertThat(map[4].type).isEqualTo(ResourceType.ATTR)
-    assertThat((map[4].resourceValue as AttrResourceValue).formats).isEqualTo(setOf(AttributeFormat.COLOR))
+    assertThat(map[8].name).isEqualTo("some_attr")
+    assertThat(map[8].type).isEqualTo(ResourceType.ATTR)
+    assertThat((map[8].resourceValue as AttrResourceValue).formats).isEqualTo(setOf(AttributeFormat.COLOR))
 
-    assertThat(map[55].name).isEqualTo("test_network_security_config")
-    assertThat(map[55].type).isEqualTo(ResourceType.XML)
+    assertThat(map[63].name).isEqualTo("test_network_security_config")
+    assertThat(map[63].type).isEqualTo(ResourceType.XML)
   }
 }

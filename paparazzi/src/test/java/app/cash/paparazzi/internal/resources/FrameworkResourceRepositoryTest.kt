@@ -186,9 +186,13 @@ class FrameworkResourceRepositoryTest {
   }
 
   private fun checkPseudolocalizedResources(repository: ResourceRepository) {
-    var items = repository.getResources(ResourceNamespace.ANDROID, STRING, "view_and_control_notification_title")
+    val items = repository.getResources(ResourceNamespace.ANDROID, STRING, "view_and_control_notification_title")
     assertThat(items[0].resourceValue.value).isEqualTo("Check access settings")
     assertThat(items[1].resourceValue.value).isEqualTo("[Çĥéçķ åççéšš šéţţîñĝš one two three]")
     assertThat(items[2].resourceValue.value).isEqualTo("${bidiWordStart}Check$bidiWordEnd ${bidiWordStart}access$bidiWordEnd ${bidiWordStart}settings$bidiWordEnd")
+
+    val untranslatedItems = repository.getResources(ResourceNamespace.ANDROID, STRING, "config_chooseAccountActivity")
+    assertThat(untranslatedItems.size).isEqualTo(1)
+    assertThat(untranslatedItems[0].resourceValue.value).isEqualTo("android/android.accounts.ChooseAccountActivity")
   }
 }

@@ -4,11 +4,20 @@
     <item quantity="zero">Nothing</item>
     <item quantity="one">One String</item>
   </plurals>
+  <plurals name="plural_name_translatable_false" translatable="false">
+    <item quantity="zero">Nothing translatable false</item>
+    <item quantity="one">One String translatable false</item>
+  </plurals>
   <string name="string_name">Test String</string>
   <string name="string_name_xliff">Test String <xliff:g id="number" example="9">{0}</xliff:g> with suffix</string>
   <string name="string_name_html"><![CDATA[<html>Test String <b>with</b> html</html>]]></string>
+  <string name="string_name_translatable_false" translatable="false">Test String translatable false</string>
   <string-array name="string_array_name">
     <item>First Test String</item>
     <item>Second Test String</item>
+  </string-array>
+  <string-array name="string_array_name_translatable_false" translatable="false">
+    <item>First Test String translatable false</item>
+    <item>Second Test String translatable false</item>
   </string-array>
 </resources>

@@ -17,12 +17,17 @@ package app.cash.paparazzi.internal.resources
 
 import app.cash.paparazzi.internal.resources.base.BasicResourceItem
 import app.cash.paparazzi.internal.resources.base.BasicValueResourceItemBase
+import com.android.SdkConstants
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.utils.Base128InputStream
 import com.android.utils.Base128InputStream.StreamFormatException
+import org.xmlpull.v1.XmlPullParser
+import java.io.BufferedInputStream
 import java.io.IOException
+import java.nio.file.NoSuchFileException
 import java.util.function.Consumer
 import java.util.function.Function
+import java.util.zip.ZipFile
 
 /**
  * Ported from: [ResourceSerializationUtil.java](https://cs.android.com/android-studio/platform/tools/base/+/18047faf69512736b8ddb1f6a6785f58d47c893f:resource-repository/main/java/com/android/resources/base/ResourceSerializationUtil.java)
@@ -58,6 +63,32 @@ object ResourceSerializationUtil {
       repository.deserializeResourceSourceFile(stream, configurations)
     }
 
+    // Get a set of strings which will not be translated
+    val untranslatableItems = mutableSetOf<String>()
+    val parser = ValueResourceXmlParser()
+    newSourceFiles.forEach {
+      val zipFile = ZipFile(it.repository.origin.toFile())
+      val entry = zipFile.getEntry("res/${it.relativePath}") ?: throw NoSuchFileException("res/${it.relativePath}")
+      BufferedInputStream(zipFile.getInputStream(entry)).use {
+        var event: Int
+        parser.setInput(it, null)
+        loop@ do {
+          event = parser.nextToken()
+          when (event) {
+            XmlPullParser.START_TAG -> {
+              if (parser.getAttributeValue(null, SdkConstants.ATTR_TRANSLATABLE)
+                  ?.toBooleanStrictOrNull() == false
+              ) {
+                parser.getAttributeValue(null, SdkConstants.ATTR_NAME)?.let {
+                  untranslatableItems.add(it)
+                }
+              }
+            }
+          }
+        } while (event != XmlPullParser.END_DOCUMENT)
+      }
+    }
+
     n = stream.readInt()
     val newNamespaceResolvers = (0 until n).map {
       var namespaceResolver = NamespaceResolver.deserialize(stream)
@@ -78,7 +109,7 @@ object ResourceSerializationUtil {
       )
       resourceConsumer.accept(item)
 
-      if (item is BasicValueResourceItemBase) {
+      if (item.name !in untranslatableItems && item is BasicValueResourceItemBase) {
         pseudolocalizeIfNeeded(item) {
           resourceConsumer.accept(it)
         }

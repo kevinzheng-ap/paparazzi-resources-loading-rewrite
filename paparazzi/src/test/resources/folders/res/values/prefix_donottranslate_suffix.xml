@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+  <plurals name="plural_name_donottranslate">
+    <item quantity="zero">Nothing donottranslate</item>
+    <item quantity="one">One String donottranslate</item>
+  </plurals>
+  <string name="string_name_donottranslate">Test String donottranslate</string>
+  <string-array name="string_array_name_donottranslate">
+    <item>First Test String donottranslate</item>
+    <item>Second Test String donottranslate</item>
+  </string-array>
+</resources>
