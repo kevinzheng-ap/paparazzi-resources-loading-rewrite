@@ -11,6 +11,8 @@ import java.util.function.Consumer
 
 private const val DO_NOT_TRANSLATE = "donottranslate"
 
+private val configCache = hashMapOf<Pair<ResourceSourceFile, String>, RepositoryConfiguration>()
+
 fun pseudolocalizeIfNeeded(
   resource: BasicValueResourceItemBase,
   resourceConsumer: Consumer<BasicValueResourceItemBase>
@@ -34,7 +36,13 @@ private fun pseudolocalizeIfNeeded(
     Pseudolocalizer.Method.BIDI -> "ar-rXB"
   }
 
-  val pseudoLocaleSourceFile = resourceItem.sourceFile.onNewLocaleQualifier(LocaleQualifier.getQualifier(pseudoLocaleQualifier))
+    var repositoryConfiguration = configCache[resourceItem.sourceFile to pseudoLocaleQualifier]
+    if (repositoryConfiguration == null) {
+      repositoryConfiguration = resourceItem.sourceFile.configuration.onNewLocaleQualifier(LocaleQualifier.getQualifier(pseudoLocaleQualifier))
+      configCache[resourceItem.sourceFile to pseudoLocaleQualifier] = repositoryConfiguration
+    }
+
+  val pseudoLocaleSourceFile = resourceItem.sourceFile.copy(repositoryConfiguration)
   val pseudoItem: BasicValueResourceItemBase = when (resourceItem.resourceType) {
     ResourceType.STRING -> pseudolocalizeString(
       resourceItem as BasicValueResourceItem,

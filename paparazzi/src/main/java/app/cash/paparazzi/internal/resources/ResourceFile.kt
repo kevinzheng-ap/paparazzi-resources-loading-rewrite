@@ -17,7 +17,6 @@ package app.cash.paparazzi.internal.resources
 
 import app.cash.paparazzi.internal.resources.base.BasicResourceItem
 import com.android.ide.common.resources.configuration.FolderConfiguration
-import com.android.ide.common.resources.configuration.LocaleQualifier
 import java.io.File
 
 /**
@@ -46,7 +45,7 @@ class ResourceFile(
 
   fun isValid(): Boolean = file != null
 
-  override fun onNewLocaleQualifier(localeQualifier: LocaleQualifier): ResourceSourceFile {
-    return ResourceFile(file, configuration.onNewLocaleQualifier(localeQualifier))
+  override fun copy(configuration: RepositoryConfiguration): ResourceSourceFile {
+    return ResourceFile(file, configuration)
   }
 }
