@@ -45,6 +45,7 @@ buildConfig {
 }
 
 tasks.withType(Test).configureEach {
+  it.inputs.dir(layout.projectDirectory.file('src/test/projects'))
   dependsOn(':paparazzi:publishMavenPublicationToProjectLocalMavenRepository')
   dependsOn(':paparazzi-agent:publishMavenPublicationToProjectLocalMavenRepository')
 }
