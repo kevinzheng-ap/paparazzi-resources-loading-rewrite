@@ -25,8 +25,6 @@ import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated
 import app.cash.paparazzi.deprecated.com.android.ide.common.resources.deprecated.ResourceRepository
 import app.cash.paparazzi.deprecated.com.android.io.FolderWrapper
 import app.cash.paparazzi.getFieldReflectively
-import app.cash.paparazzi.internal.resources.AarSourceResourceRepository
-import app.cash.paparazzi.internal.resources.AppResourceRepository
 import app.cash.paparazzi.internal.resources.FrameworkResourceRepository
 import app.cash.paparazzi.setStaticValue
 import com.android.layoutlib.bridge.Bridge
@@ -34,7 +32,6 @@ import com.android.layoutlib.bridge.android.RenderParamsFlags
 import com.android.layoutlib.bridge.impl.DelegateManager
 import java.io.Closeable
 import java.io.File
-import java.nio.file.Paths
 import java.util.Locale
 import kotlin.io.path.name
 
