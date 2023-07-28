@@ -69,7 +69,7 @@ internal class Renderer(
             }.apply { loadResources() }
           )
       } else {
-        println("test")  
+        println("test")
 
         ResourceRepositoryBridge.New(
           FrameworkResourceRepository.create(
