@@ -76,19 +76,7 @@ internal class Renderer(
             useCompiled9Patches = false
           )
         ) to
-          ResourceRepositoryBridge.New(
-            AppResourceRepository.create(
-              localResourceDirectories = environment.localResourceDirs.map { File(it) },
-              moduleResourceDirectories = environment.moduleResourceDirs.map { File(it) },
-              libraryRepositories = environment.libraryResourceDirs.map { dir ->
-                val resourceDirPath = Paths.get(dir)
-                AarSourceResourceRepository.create(
-                  resourceDirectoryOrFile = resourceDirPath,
-                  libraryName = resourceDirPath.parent.fileName.name // segment before /res
-                )
-              }
-            )
-          )
+          throw IllegalStateException()
       }
 
     val useLegacyAssetLoading = System.getProperty(Flags.LEGACY_ASSET_LOADING).toBoolean()
