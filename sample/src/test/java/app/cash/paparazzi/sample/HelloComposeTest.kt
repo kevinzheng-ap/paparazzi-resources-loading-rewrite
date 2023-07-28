@@ -22,6 +22,7 @@ class HelloComposeTest {
 
   @Test
   fun compose() {
+    println("HelloComposeTest")
     paparazzi.snapshot { HelloPaparazzi() }
   }
 }
